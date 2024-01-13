@@ -1,0 +1,13 @@
+{
+  "name": "async-example",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A simple example for async/await",
+  "main": "./index.js",
+  "scripts": {
+    "start": "node ./index.js"
+  },
+  "author": "Adam Akiva",
+  "license": "UNLICENSED",
+  "private": true
+}

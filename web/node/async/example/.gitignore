@@ -1,0 +1,7 @@
+# Ignore everything
+*
+
+# Exclude specific files
+!*.js
+!*.json
+!.gitignore
