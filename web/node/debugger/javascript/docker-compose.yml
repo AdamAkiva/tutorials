@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+  nodejs-debugger-js:
+    container_name: nodejs-debugger-js
+    restart: unless-stopped
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - SERVER_PORT=3000
+      - DEBUG_PORT=3001
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ./src:/app/src
+    command: npm run start:dev

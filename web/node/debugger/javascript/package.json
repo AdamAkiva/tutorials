@@ -1,0 +1,19 @@
+{
+  "name": "nodejs_debugger",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Guide on how to attach debugger to nodejs program using vscode",
+  "main": "./src/main.js",
+  "scripts": {
+    "start:dev": "npx nodemon --config nodemon.json ./src/main.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "author": "Adam Akiva",
+  "license": "UNLICENSED",
+  "private": true
+}

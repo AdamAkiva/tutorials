@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# Exclude folders from above rule
+!**/
+
+# Exclude specific files
+!*.ts
+!*.json
+!*.yml
+!Dockerfile
+!*.md
+!.gitignore
