@@ -1,0 +1,134 @@
+version: "3.9"
+services:
+  # Database options for your convince, pick whichever one/s you wish and remove
+  # the rest
+  # node-template-mongo-dev:
+  #   hostname: node-template-mongo-dev
+  #   container_name: node-template-mongo-dev
+  #   restart: unless-stopped
+  #   # Change to a static version (not set as so, because how should I know when
+  #   # you use this template?)
+  #   image: mongo:latest
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=admin
+  #     - MONGO_DB_NAME=node-template-dev
+  #   volumes:
+  #     - ../db-dev-data/mongo:/data/db:rw
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: 20m
+  #       max-file: 5
+  #       compress: "true"
+  #   stop_grace_period: 2s
+  #   healthcheck:
+  #     test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/node-template-dev --quiet
+  #     interval: 3s
+  #     timeout: 2s
+  #     retries: 5
+  #   command: --port 27017
+
+  # node-template-pg-dev:
+  #   hostname: node-template-pg-dev
+  #   container_name: node-template-pg-dev
+  #   restart: unless-stopped
+  #   # Change to a static version (not set as so, because how should I know when
+  #   # you use this template?)
+  #   image: postgres:alpine
+  #   environment:
+  #     - POSTGRES_USER=admin
+  #     - POSTGRES_PASSWORD=admin
+  #     - POSTGRES_DB=node-template-dev
+  #   volumes:
+  #     - ../db-dev-data/pg:/var/lib/postgresql/data:rw
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: 20m
+  #       max-file: 5
+  #       compress: "true"
+  #   stop_grace_period: 2s
+  #   healthcheck:
+  #     test: pg_isready -p 5432 -U admin -d node-template-pg-dev
+  #     interval: 3s
+  #     timeout: 2s
+  #     retries: 5
+  #   command: -p 5432
+
+  # node-template-redis-dev:
+  #   hostname: node-template-redis-dev
+  #   container_name: node-template-redis-dev
+  #   restart: unless-stopped
+  #   # Change to a static version (not set as so, because how should I know when
+  #   # you use this template?)
+  #   image: redis:alpine
+  #   # Redis most likely will be used as cache, if you want to make it consistent
+  #   # in addition to in-memory cache, don't forget to add a volume
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #       max-size: 20m
+  #       max-file: 5
+  #       compress: "true"
+  #   stop_grace_period: 2s
+  #   healthcheck:
+  #     test: redis-cli -p 6379 ping | grep PONG
+  #     interval: 3s
+  #     timeout: 2s
+  #     retries: 5
+  #   command: redis-server --port 6379
+
+  ##################################################################################
+
+  node-template-dev:
+    hostname: node-template-dev
+    container_name: node-template-dev
+    restart: unless-stopped
+    build:
+      context: ../be
+      dockerfile: Dockerfile
+      target: be-dev
+    user: ${HOST_UID}:${HOST_GID}
+    environment:
+      - SERVER_PORT=9865
+      - SERVER_DEBUG_PORT=9229
+      - SERVER_URL=http://localhost
+      - API_ROUTE=api/v0
+      - HEALTH_CHECK_ROUTE=health
+      - ALLOWED_ORIGINS=*
+      # - DB_URI=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
+      # - DB_URI=mongodb://admin:admin@node-template-mongo-dev:27017/node-template-dev?authSource=admin # Mongo
+      # - CACHE_URI=redis://node-template-redis-dev:6379 # Redis
+      - NODE_ENV=development
+    volumes:
+      - ../be:/home/node:rw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 20m
+        max-file: 5
+        compress: "true"
+    stop_grace_period: 2s
+    ports:
+      - "9865:9865"
+      - "9229:9229"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -o /dev/null -w '%{http_code}' http://localhost:9865/health | grep -q '204'"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 45s
+    # Uncomment for the database(s) you've chosen
+    # depends_on:
+    #   node-template-mongo-dev:
+    #     condition: service_healthy
+    #   node-template-pg-dev:
+    #     condition: service_healthy
+    #   node-template-redis-dev:
+    #     condition: service_healthy
+    command: /bin/sh -c "npm install --ddd && npm run start:dev"
