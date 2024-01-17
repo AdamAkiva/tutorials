@@ -1,6 +1,6 @@
 ## A list of recommended packages for NodeJS backend development
 
-### Last update: 13.01.2023
+### Last update: 17.01.2023
 
 ### 7 minutes read
 
@@ -134,16 +134,17 @@ relevant stuff to pay attention to is written as comments.
 
 1. **Ky** - Supports Browsers/NodeJS/Deno with 0 dependencies. Based on fetch API.
    Written and has full typescript support.
-2. **Axios** - The old reliable. Works and used fo so long it is practically the
+2. **GOT** - Supports NodeJS with 0 dependencies. Very similar to Ky, but this is
+   a package more intended for NodeJS with more complex options. Has full
+   typescript support
+3. **Axios** - The old reliable. Works and used fo so long it is practically the
    defacto-standard. Has ok typescript support, and few dependencies.
-3. **Supertest** - Used mainly for testing. Able to receive an HttpServer instance,
-   and start it on an ephemeral port.
 
-| Library   | Size   | Typescript support | Popularity     | Maintainable |
-| --------- | ------ | ------------------ | -------------- | ------------ |
-| Ky        | Low    | Yes                | High           | Frequently   |
-| Axios     | Medium | Yes                | Extremely High | Frequently   |
-| Supertest | Low    | Yes                | Very High      | Frequently   |
+| Library | Size   | Typescript support | Popularity     | Maintainable |
+| ------- | ------ | ------------------ | -------------- | ------------ |
+| Ky      | Low    | Yes                | High           | Frequently   |
+| GOT     | Low    | Yes                | Very High      | Frequently   |
+| Axios   | Medium | Yes                | Extremely High | Frequently   |
 
 ---
 
