@@ -1,11 +1,11 @@
-FROM node:lts-alpine3.19 as be-base
+FROM node:lts-alpine3.19 as fe-base
 
 # Install dependencies
 RUN apk update && apk add curl
 
 ############################### Development ########################################
 
-FROM be-base as be-dev
+FROM fe-base as fe-dev
 
 # Set the workdir
 WORKDIR /home/node

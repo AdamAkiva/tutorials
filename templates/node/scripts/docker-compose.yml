@@ -81,7 +81,7 @@ services:
 
   ##################################################################################
 
-  node-template-dev:
+  node-template-be-dev:
     hostname: node-template-dev
     container_name: node-template-dev
     restart: unless-stopped
@@ -125,6 +125,53 @@ services:
       start_period: 45s
     # Uncomment for the database(s) you've chosen
     # depends_on:
+    #   node-template-mongo-dev:
+    #     condition: service_healthy
+    #   node-template-pg-dev:
+    #     condition: service_healthy
+    #   node-template-redis-dev:
+    #     condition: service_healthy
+    command: /bin/sh -c "npm install --ddd && npm run start:dev"
+
+  node-template-fe-dev:
+    hostname: node-template-fe-dev
+    container_name: node-template-fe-dev
+    restart: unless-stopped
+    build:
+      context: ../fe
+      dockerfile: Dockerfile
+      target: fe-dev
+    user: ${HOST_UID}:${HOST_GID}
+    environment:
+      - CLIENT_PORT=9866
+      - MONITORING_APP_HTTP_SERVER_URL=http://localhost:9865/api/v0
+      - MONITORING_APP_WS_SERVER_URL=ws://localhost:9865
+      - NODE_ENV=development
+    volumes:
+      - ../fe:/home/node:rw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 20m
+        max-file: 5
+        compress: "true"
+    stop_grace_period: 2s
+    ports:
+      - "9866:9866"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -o /dev/null -w '%{http_code}' http://localhost:9866 | grep -q '200'"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 45s
+    depends_on:
+      node-template-be-dev:
+        condition: service_healthy
+    # Uncomment for the database(s) you've chosen
     #   node-template-mongo-dev:
     #     condition: service_healthy
     #   node-template-pg-dev:
