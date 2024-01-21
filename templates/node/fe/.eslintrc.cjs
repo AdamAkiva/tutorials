@@ -2,37 +2,38 @@ module.exports = {
   root: true,
   env: { browser: true, es2020: true },
   parser: '@typescript-eslint/parser',
-  plugins: ['react-refresh'],
+  plugins: ['@typescript-eslint', 'react', 'react-refresh'],
+  extends: [
+    'eslint:recommended',
+    'plugin:security/recommended-legacy',
+    'plugin:react/recommended',
+    'plugin:react/jsx-runtime',
+    'plugin:react-hooks/recommended',
+    'plugin:@typescript-eslint/strict-type-checked',
+    'plugin:@typescript-eslint/stylistic-type-checked',
+    'prettier'
+  ],
   settings: {
     react: { version: 'detect' }
   },
   overrides: [
     {
       files: ['./src/**/*.ts', './src/**/*.tsx'],
-      extends: [
-        'eslint:recommended',
-        'plugin:security/recommended-legacy',
-        'plugin:react/recommended',
-        'plugin:react/jsx-runtime',
-        'plugin:react-hooks/recommended',
-        'plugin:@typescript-eslint/strict-type-checked',
-        'plugin:@typescript-eslint/stylistic-type-checked',
-        'prettier'
-      ],
       parserOptions: {
-        ecmaVersion: 'latest',
+        ecmaVersion: '2020',
         tsconfigRootDir: __dirname,
         sourceType: 'module',
-        project: './tsconfig.json'
+        project: './tsconfig.json',
+        ecmaFeature: { jsx: true }
       },
       rules: {
         // React related
         'react-refresh/only-export-components': [
-          'warn',
+          2,
           { allowConstantExport: true }
         ],
-
-        // Typescript & Security related
+        'react/boolean-prop-naming': [2, { validateNested: true }],
+        // Typescript related
         '@typescript-eslint/adjacent-overload-signatures': 2,
         '@typescript-eslint/array-type': [2, { default: 'array' }],
         '@typescript-eslint/await-thenable': 2,
@@ -165,6 +166,7 @@ module.exports = {
         'no-return-await': 'off',
         '@typescript-eslint/return-await': [2, 'always'],
 
+        // Security related
         'security/detect-bidi-characters': 2,
         'security/detect-buffer-noassert': 2,
         'security/detect-child-process': 2,

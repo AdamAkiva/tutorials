@@ -1,7 +1,7 @@
 export const getEnvValue = (name: string) => {
   const envKey = `MONITORING_APP_${name}`;
 
-  const envValue: string = import.meta.env[envKey] || '';
+  const envValue = (import.meta.env[envKey] as string | undefined) ?? '';
   if (!envValue) {
     console.error(`Environment value: ${envKey} does not exist`);
   }

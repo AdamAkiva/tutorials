@@ -2,22 +2,24 @@ module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
+  extends: [
+    'eslint:recommended',
+    'plugin:security/recommended-legacy',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier'
+  ],
   overrides: [
     {
       files: ['./src/**/*.ts', './__tests__/**/*.ts'],
-      extends: [
-        'eslint:recommended',
-        'plugin:security/recommended-legacy',
-        'plugin:@typescript-eslint/eslint-recommended',
-        'plugin:@typescript-eslint/recommended',
-        'prettier'
-      ],
       parserOptions: {
+        ecmaVersion: '2020',
         tsconfigRootDir: __dirname,
         sourceType: 'module',
         project: './tsconfig.json'
       },
       rules: {
+        // Typescript related
         '@typescript-eslint/adjacent-overload-signatures': 2,
         '@typescript-eslint/array-type': [2, { default: 'array' }],
         '@typescript-eslint/await-thenable': 2,
@@ -148,6 +150,7 @@ module.exports = {
         'no-return-await': 'off',
         '@typescript-eslint/return-await': [2, 'always'],
 
+        // Security related
         'security/detect-bidi-characters': 2,
         'security/detect-buffer-noassert': 2,
         'security/detect-child-process': 2,
