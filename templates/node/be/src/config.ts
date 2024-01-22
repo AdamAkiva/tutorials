@@ -1,5 +1,3 @@
-/**********************************************************************************/
-
 type Mode = 'development' | 'production' | 'test';
 type EnvironmentVariables = {
   mode: Mode;

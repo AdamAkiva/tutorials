@@ -1,12 +1,19 @@
+/* eslint-disable no-undef */
+
+/*
+  These rules should **not** conflict with prettier, such as spaces and new lines
+  rules. Please refrain from doing rules for it, or you will encounter issues.
+  (Unless you sure about what you're doing)
+*/
+
 module.exports = {
   root: true,
+  env: { node: true },
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
   extends: [
     'eslint:recommended',
     'plugin:security/recommended-legacy',
-    'plugin:@typescript-eslint/eslint-recommended',
-    'plugin:@typescript-eslint/recommended',
     'prettier'
   ],
   overrides: [
