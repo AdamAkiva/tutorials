@@ -1,5 +1,5 @@
 export const getEnvValue = (name: string) => {
-  const envKey = `MONITORING_APP_${name}`;
+  const envKey = `DASHBOARD_${name}`;
 
   const envValue = (import.meta.env[envKey] as string | undefined) ?? '';
   if (!envValue) {
