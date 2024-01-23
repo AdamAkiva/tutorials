@@ -12,7 +12,7 @@ type EnvironmentVariables = {
 
 /**********************************************************************************/
 
-let env: EnvironmentVariables | undefined = undefined;
+let env: EnvironmentVariables | undefined;
 export const getEnv = () => {
   if (env) {
     return env;
