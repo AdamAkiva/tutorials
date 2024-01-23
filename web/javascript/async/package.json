@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "description": "A simple example for async/await",
-  "main": "./index.js",
+  "main": "./README_EXAMPLE.js",
   "scripts": {
-    "start": "node ./index.js"
+    "start": "node ./README_EXAMPLE.js"
   },
   "author": "Adam Akiva",
   "license": "UNLICENSED",
