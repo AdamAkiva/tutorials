@@ -82,8 +82,8 @@ services:
   ##################################################################################
 
   node-template-be-dev:
-    hostname: node-template-dev
-    container_name: node-template-dev
+    hostname: node-template-be-dev
+    container_name: node-template-be-dev
     restart: unless-stopped
     build:
       context: ../be
@@ -96,13 +96,16 @@ services:
       - SERVER_URL=http://localhost
       - API_ROUTE=api/v0
       - HEALTH_CHECK_ROUTE=health
+      # Depends on whose the client (browser) your application has. Either match
+      # it to the frontend application you have, or remove it if it is only
+      # a server
       - ALLOWED_ORIGINS=*
       # - DB_URI=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
       # - DB_URI=mongodb://admin:admin@node-template-mongo-dev:27017/node-template-dev?authSource=admin # Mongo
       # - CACHE_URI=redis://node-template-redis-dev:6379 # Redis
       - NODE_ENV=development
     volumes:
-      - ../be:/home/node:rw
+      - ../be:/home/node/node-template:rw
     logging:
       driver: "json-file"
       options:
@@ -148,7 +151,7 @@ services:
       - MONITORING_APP_WS_SERVER_URL=ws://localhost:9865
       - NODE_ENV=development
     volumes:
-      - ../fe:/home/node:rw
+      - ../fe:/home/node/node-template:rw
     logging:
       driver: "json-file"
       options:
