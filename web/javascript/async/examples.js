@@ -65,3 +65,17 @@ await Promise.all(promises);
 console.log(
   `Map with await execution time: ${performance.now() - startTime}ms`
 );
+
+/**********************************************************************************/
+
+startTime = performance.now();
+await Promise.all(
+  [1, 2, 3, 4, 5].map(async (val) => {
+    await sleep(500);
+    return console.log(val);
+  })
+);
+await Promise.all(promises);
+console.log(
+  `Map with await execution time: ${performance.now() - startTime}ms`
+);
