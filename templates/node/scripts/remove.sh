@@ -2,10 +2,9 @@
 
 ####################################################################################
 
-DB_MIGRATIONS_FOLDER=../be/db-migrations
 DB_DATA_FOLDER=../db-dev-data
 TEST_COVERAGE_FOLDER=../be/__tests__/coverage
-FE_MODULES_FOLDER=../fe_node_modules
+FE_MODULES_FOLDER=../fe/node_modules
 BE_MODULES_FOLDER=../be/node_modules
 
 ####################################################################################
@@ -22,10 +21,6 @@ check_prerequisites() {
 }
 
 remove() {
-    if ! INIT_SCRIPT=$(find $(pwd) $DB_MIGRATIONS_FOLDER -name "*.sql"); then
-        printf "\nMigrations file not found. Did you follow the instructions correctly?\n\n" && exit 1;
-    fi
-
     if ! HOST_UID=$(id -u) HOST_GID=$(id -g) INIT_SCRIPT=$INIT_SCRIPT \
          docker compose down; then
         printf "\ndocker removal failed, solve the error/s and try again\n\n" && exit 1;
