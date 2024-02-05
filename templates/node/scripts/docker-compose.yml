@@ -8,6 +8,7 @@ services:
   #   restart: unless-stopped
   #   # Change to a static version (not set as so, because how should I know when
   #   # you use this template?)
+  #   # See: https://hub.docker.com/_/mongo/tags
   #   image: mongo:latest
   #   environment:
   #     - MONGO_INITDB_ROOT_USERNAME=admin
@@ -15,12 +16,6 @@ services:
   #     - MONGO_DB_NAME=node-template-dev
   #   volumes:
   #     - ../db-dev-data/mongo:/data/db:rw
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: 20m
-  #       max-file: 5
-  #       compress: "true"
   #   stop_grace_period: 2s
   #   healthcheck:
   #     test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/node-template-dev --quiet
@@ -35,6 +30,7 @@ services:
   #   restart: unless-stopped
   #   # Change to a static version (not set as so, because how should I know when
   #   # you use this template?)
+  #   # See: https://hub.docker.com/_/postgres/tags
   #   image: postgres:alpine
   #   environment:
   #     - POSTGRES_USER=admin
@@ -42,12 +38,6 @@ services:
   #     - POSTGRES_DB=node-template-dev
   #   volumes:
   #     - ../db-dev-data/pg:/var/lib/postgresql/data:rw
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: 20m
-  #       max-file: 5
-  #       compress: "true"
   #   stop_grace_period: 2s
   #   healthcheck:
   #     test: pg_isready -p 5432 -U admin -d node-template-pg-dev
@@ -62,15 +52,10 @@ services:
   #   restart: unless-stopped
   #   # Change to a static version (not set as so, because how should I know when
   #   # you use this template?)
+  #   # See: https://hub.docker.com/_/redis/tags
   #   image: redis:alpine
   #   # Redis most likely will be used as cache, if you want to make it consistent
   #   # in addition to in-memory cache, don't forget to add a volume
-  #   logging:
-  #     driver: "json-file"
-  #     options:
-  #       max-size: 20m
-  #       max-file: 5
-  #       compress: "true"
   #   stop_grace_period: 2s
   #   healthcheck:
   #     test: redis-cli -p 6379 ping | grep PONG
@@ -94,38 +79,35 @@ services:
       - SERVER_PORT=9865
       - SERVER_DEBUG_PORT=9229
       - SERVER_URL=http://localhost
-      - API_ROUTE=api/v0
+      - API_ROUTE=v0/api
       - HEALTH_CHECK_ROUTE=health
       # Depends on whose the client (browser) your application has. Either match
       # it to the frontend application you have, or remove it if it is only
-      # a server
+      # accessed by server(s)
       - ALLOWED_ORIGINS=*
+      # Uncomment (and maybe change the name) of the database(s) you chose
       # - DB_URI=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
       # - DB_URI=mongodb://admin:admin@node-template-mongo-dev:27017/node-template-dev?authSource=admin # Mongo
       # - CACHE_URI=redis://node-template-redis-dev:6379 # Redis
       - NODE_ENV=development
     volumes:
       - ../be:/home/node/node-template:rw
-    logging:
-      driver: "json-file"
-      options:
-        max-size: 20m
-        max-file: 5
-        compress: "true"
     stop_grace_period: 2s
     ports:
       - "9865:9865"
       - "9229:9229"
     healthcheck:
+      # Change the grep -q command to the http status code returned from the
+      # health check route
       test:
         [
           "CMD-SHELL",
           "curl -s -o /dev/null -w '%{http_code}' http://localhost:9865/health | grep -q '204'"
         ]
-      interval: 10s
+      interval: 15s
       timeout: 3s
-      retries: 10
-      start_period: 45s
+      retries: 5
+      start_period: 30s
     # Uncomment for the database(s) you've chosen
     # depends_on:
     #   node-template-mongo-dev:
@@ -134,7 +116,7 @@ services:
     #     condition: service_healthy
     #   node-template-redis-dev:
     #     condition: service_healthy
-    command: /bin/sh -c "npm install --ddd && npm run start:dev"
+    command: /bin/sh -c "npm install --d && npm run start:dev"
 
   node-template-fe-dev:
     hostname: node-template-fe-dev
@@ -147,17 +129,11 @@ services:
     user: ${HOST_UID}:${HOST_GID}
     environment:
       - CLIENT_PORT=9866
-      - MONITORING_APP_HTTP_SERVER_URL=http://localhost:9865/api/v0
-      - MONITORING_APP_WS_SERVER_URL=ws://localhost:9865
+      - NODE_TEMPLATE_HTTP_SERVER_URL=http://localhost:9865/api/v0
+      - NODE_TEMPLATE_WS_SERVER_URL=ws://localhost:9865
       - NODE_ENV=development
     volumes:
       - ../fe:/home/node/node-template:rw
-    logging:
-      driver: "json-file"
-      options:
-        max-size: 20m
-        max-file: 5
-        compress: "true"
     stop_grace_period: 2s
     ports:
       - "9866:9866"
@@ -167,18 +143,16 @@ services:
           "CMD-SHELL",
           "curl -s -o /dev/null -w '%{http_code}' http://localhost:9866 | grep -q '200'"
         ]
-      interval: 10s
+      interval: 15s
       timeout: 3s
-      retries: 10
-      start_period: 45s
-    depends_on:
-      node-template-be-dev:
-        condition: service_healthy
+      retries: 5
+      start_period: 30s
     # Uncomment for the database(s) you've chosen
+    # depends_on:
     #   node-template-mongo-dev:
     #     condition: service_healthy
     #   node-template-pg-dev:
     #     condition: service_healthy
     #   node-template-redis-dev:
     #     condition: service_healthy
-    command: /bin/sh -c "npm install --ddd && npm run start:dev"
+    command: /bin/sh -c "npm install --d && npm run start:dev"

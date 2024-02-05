@@ -2,7 +2,8 @@
 
 ####################################################################################
 
-DB_DATA_FOLDER=../db-dev-data
+DB_DATA_FOLDER=../db-dev-data;
+ERR_LOG_FILE=compose_err_logs.txt;
 
 ####################################################################################
 
@@ -18,14 +19,34 @@ check_prerequisites() {
 }
 
 start() {
-    printf "Building Application...\n\n" && mkdir -p $DB_DATA_FOLDER;
-    if ! HOST_UID=$(id -u) HOST_GID=$(id -g) INIT_SCRIPT=$INIT_SCRIPT \
-         docker -D compose up --build --remove-orphans \
-         --always-recreate-deps --force-recreate -d --wait; then
-        printf "\ndocker build failed, solve the error/s and try again\n\n" && exit 1;
+    printf "Building Application...\n\n" && mkdir -p "$DB_DATA_FOLDER";
+
+    printf "Do you wish to recreate the images? (y/n) ";
+    read -r opn;
+    if [ "${opn:-n}" = "y" ]; then
+        if ! HOST_UID=$(id -u) HOST_GID=$(id -g) docker -D compose build --no-cache; then
+            printf "\nDocker build failed. Solve the errors displayed above and try again\n" &&
+            exit 1;
+        fi
     fi
 
-    return 0;
+    run_docker && return 0;
+}
+
+run_docker() {
+    if ! HOST_UID=$(id -u) HOST_GID=$(id -g) docker -D compose up --timestamps -d --wait; then
+        for service in $(docker compose config --services); do
+            health_status=$(docker inspect --format '{{.State.Health.Status}}' "$service");
+            if [ "$health_status" != "healthy" ]; then
+                docker compose logs --no-color "$service" >> "$ERR_LOG_FILE" 2>&1;
+            fi
+        done
+        cat "$ERR_LOG_FILE" &&
+        printf "\n\nDocker run failed. The logs are displayed above. Use them to solve the issue(s) and try again\n\n" &&
+        exit 1;
+    fi
+
+    rm "$ERR_LOG_FILE" 1> /dev/null 2> /dev/null && return 0;
 }
 
 ####################################################################################

@@ -21,8 +21,7 @@ check_prerequisites() {
 }
 
 remove() {
-    if ! HOST_UID=$(id -u) HOST_GID=$(id -g) INIT_SCRIPT=$INIT_SCRIPT \
-         docker compose down; then
+    if ! HOST_UID=$(id -u) HOST_GID=$(id -g) docker compose down; then
         printf "\ndocker removal failed, solve the error/s and try again\n\n" && exit 1;
     fi
 
@@ -31,9 +30,9 @@ remove() {
 
 remove_test_coverage() {
     printf "Do you wish to remove tests coverage folder? (y/n) ";
-    read opn;
+    read -r opn;
     if [ "${opn:-n}" = "y" ]; then
-        rm -rf $TEST_COVERAGE_FOLDER;
+        rm -rf "$TEST_COVERAGE_FOLDER";
     fi
 
     return 0;
@@ -41,9 +40,9 @@ remove_test_coverage() {
 
 remove_node_modules() {
     printf "Do you wish to remove node_modules folder? (y/n) ";
-    read opn;
+    read -r opn;
     if [ "${opn:-n}" = "y" ]; then
-        rm -rf $FE_MODULES_FOLDER $BE_MODULES_FOLDER
+        rm -rf "$FE_MODULES_FOLDER" "$BE_MODULES_FOLDER";
     fi
 
     return 0;
@@ -51,9 +50,9 @@ remove_node_modules() {
 
 remove_database() {
     printf "Do you wish to remove database folder? (requires sudo permissions) (y/n) ";
-    read opn;
+    read -r opn;
     if [ "${opn:-n}" = "y" ]; then
-        sudo rm -rf $DB_DATA_FOLDER;
+        sudo rm -rf "$DB_DATA_FOLDER";
     fi
 
     return 0;
