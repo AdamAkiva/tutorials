@@ -44,7 +44,7 @@ run_docker() {
                 docker compose logs --no-color "$service" >> "$ERR_LOG_FILE" 2>&1;
             fi
         done
-        cat "$ERR_LOG_FILE" &&
+        cat "$ERR_LOG_FILE";
         printf "\n\nDocker run failed. The logs are displayed above. Use them to solve the issue(s) and try again\n\n";
         exit 1;
     fi
