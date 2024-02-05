@@ -1,11 +1,14 @@
-import { createServer, type Server } from 'node:http';
-import { inspect } from 'node:util';
+import {
+  compress,
+  cors,
+  createServer,
+  express,
+  inspect,
+  type Application,
+  type Server
+} from './types/index.js';
 
-import compress from 'compression';
-import cors from 'cors';
-import express, { type Application } from 'express';
-
-import { getEnv } from './config.js';
+import { getEnv } from './utils/index.js';
 
 /**********************************************************************************/
 
@@ -15,14 +18,8 @@ const startServer = async () => {
   const app = express();
   const server = createServer(app);
 
-  // Once since if any of these errors occur, the server will be shutdown, see:
-  // https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html#error-exception-handling
-  // For reasoning
-  process.once('unhandledRejection', globalErrorHandler(server, 'rejection'));
-  process.once('uncaughtException', globalErrorHandler(server, 'exception'));
-
-  await attachMiddleware(app, serverEnv.allowedOrigins);
   attachServerConfigurations(server);
+  await attachMiddleware(app, serverEnv.allowedOrigins);
 
   attachRoutes(app, serverEnv.healthCheckRoute);
 
@@ -32,20 +29,30 @@ const startServer = async () => {
         ` ${serverEnv.url}:${serverEnv.port}/${serverEnv.apiRoute}`
     );
   });
+
+  // Once since if any of these errors occur, the server will be shutdown, see:
+  // https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html#error-exception-handling
+  // For reasoning
+  process.once('unhandledRejection', globalErrorHandler(server, 'rejection'));
+  process.once('uncaughtException', globalErrorHandler(server, 'exception'));
 };
 
 const attachMiddleware = async (
   app: Application,
-  allowedOrigins: string[] | string
+  allowedOrigins: Set<string>
 ) => {
   // No need to give the clients the information on which framework we are using
-  app.disable('x-powered-by');
+  app.disable('etag').disable('x-powered-by');
 
   app.use(
     // If you build a server which should not receive any browser requests,
     // feel free to remove cors
     cors({
-      origin: allowedOrigins,
+      // '*' and ['*'] are not the same, hence need to explicitly check for it
+      origin:
+        allowedOrigins.size === 1
+          ? Array.from(allowedOrigins)[0]
+          : Array.from(allowedOrigins),
       // Add or remove if you need any additional methods
       methods: ['HEAD', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
     }),
@@ -97,12 +104,14 @@ const attachRoutes = (app: Application, healthCheckRoute: string) => {
 
 const attachServerConfigurations = (server: Server) => {
   // See: https://nodejs.org/api/http.html
-  server.maxHeadersCount = 200;
-  server.headersTimeout = 10_000; // millis
-  server.requestTimeout = 30_000; // millis
-  server.timeout = 600_000; // millis
-  server.maxRequestsPerSocket = 500;
-  server.keepAliveTimeout = 3_000; // millis
+  // Change these values according to the server needs. These values (imo) are
+  // better defaults than the one node supplies
+  server.maxHeadersCount = 256;
+  server.headersTimeout = 16_000; // millis
+  server.requestTimeout = 32_000; // millis
+  server.timeout = 524_288; // millis
+  server.maxRequestsPerSocket = 0; // No request limit
+  server.keepAliveTimeout = 4_000; // millis
 };
 
 const globalErrorHandler = (

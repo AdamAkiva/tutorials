@@ -15,7 +15,7 @@ services:
   #     - MONGO_INITDB_ROOT_PASSWORD=admin
   #     - MONGO_DB_NAME=node-template-dev
   #   volumes:
-  #     - ../db-dev-data/mongo:/data/db:rw
+  #     - ../db-dev-data:/data/db:rw
   #   stop_grace_period: 2s
   #   healthcheck:
   #     test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/node-template-dev --quiet
@@ -24,29 +24,29 @@ services:
   #     retries: 5
   #   command: --port 27017
 
-  # node-template-pg-dev:
-  #   hostname: node-template-pg-dev
-  #   container_name: node-template-pg-dev
-  #   restart: unless-stopped
-  #   # Change to a static version (not set as so, because how should I know when
-  #   # you use this template?)
-  #   # See: https://hub.docker.com/_/postgres/tags
-  #   image: postgres:alpine
-  #   user: ${HOST_UID}:${HOST_GID}
-  #   environment:
-  #     - POSTGRES_USER=admin
-  #     - POSTGRES_PASSWORD=admin
-  #     - POSTGRES_DB=node-template-dev
-  #   volumes:
-  #     - ../db-dev-data:/var/lib/postgresql/data:rw
-  #     - /etc/passwd:/etc/passwd:ro # See: https://github.com/docker-library/docs/blob/master/postgres/README.md#arbitrary---user-notes
-  #   stop_grace_period: 2s
-  #   healthcheck:
-  #     test: pg_isready -p 5432 -U admin -d node-template-dev
-  #     interval: 3s
-  #     timeout: 2s
-  #     retries: 5
-  #   command: -p 5432
+  node-template-pg-dev:
+    hostname: node-template-pg-dev
+    container_name: node-template-pg-dev
+    restart: unless-stopped
+    # Change to a static version (not set as so, because how should I know when
+    # you use this template?)
+    # See: https://hub.docker.com/_/postgres/tags
+    image: postgres:alpine
+    user: ${UID}:${GID}
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=node-template-dev
+    volumes:
+      - ../db-dev-data:/var/lib/postgresql/data:rw
+      - /etc/passwd:/etc/passwd:ro # See: https://github.com/docker-library/docs/blob/master/postgres/README.md#arbitrary---user-notes
+    stop_grace_period: 2s
+    healthcheck:
+      test: pg_isready -p 5432 -U admin -d node-template-dev
+      interval: 3s
+      timeout: 2s
+      retries: 5
+    command: -p 5432
 
   # node-template-redis-dev:
   #   hostname: node-template-redis-dev
@@ -78,7 +78,7 @@ services:
       target: be-dev
       args:
         DOCKER_BUILDKIT: 1
-    user: ${HOST_UID}:${HOST_GID}
+    user: ${UID}:${GID}
     environment:
       - SERVER_PORT=9865
       - SERVER_DEBUG_PORT=9229
@@ -89,8 +89,8 @@ services:
       # it to the frontend application you have, or remove it if it is only
       # accessed by server(s)
       - ALLOWED_ORIGINS=*
-      # Uncomment (and maybe change the name) of the database(s) you chose
-      # - DB_URI=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
+      # Uncomment (and maybe change the name) the database(s) you chose
+      - DB_URI=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
       # - DB_URI=mongodb://admin:admin@node-template-mongo-dev:27017/node-template-dev?authSource=admin # Mongo
       # - CACHE_URI=redis://node-template-redis-dev:6379 # Redis
       - NODE_ENV=development
@@ -113,11 +113,11 @@ services:
       retries: 5
       start_period: 30s
     # Uncomment for the database(s) you've chosen
-    # depends_on:
+    depends_on:
     #   node-template-mongo-dev:
     #     condition: service_healthy
-    #   node-template-pg-dev:
-    #     condition: service_healthy
+      node-template-pg-dev:
+        condition: service_healthy
     #   node-template-redis-dev:
     #     condition: service_healthy
     command: /bin/sh -c "npm install --d && npm run start:dev"
@@ -132,7 +132,7 @@ services:
       target: fe-dev
       args:
         DOCKER_BUILDKIT: 1
-    user: ${HOST_UID}:${HOST_GID}
+    user: ${UID}:${GID}
     environment:
       - CLIENT_PORT=9866
       - NODE_TEMPLATE_HTTP_SERVER_URL=http://localhost:9865/api/v0
@@ -153,12 +153,4 @@ services:
       timeout: 3s
       retries: 5
       start_period: 30s
-    # Uncomment for the database(s) you've chosen
-    # depends_on:
-    #   node-template-mongo-dev:
-    #     condition: service_healthy
-    #   node-template-pg-dev:
-    #     condition: service_healthy
-    #   node-template-redis-dev:
-    #     condition: service_healthy
     command: /bin/sh -c "npm install --d && npm run start:dev"

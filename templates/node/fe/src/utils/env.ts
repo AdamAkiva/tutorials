@@ -1,5 +1,5 @@
 export const getEnvValue = (name: string) => {
-  const envKey = `DASHBOARD_${name}`;
+  const envKey = `NODE_TEMPLATE_${name}`;
 
   const envValue = (import.meta.env[envKey] as string | undefined) ?? '';
   if (!envValue) {
