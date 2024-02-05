@@ -24,7 +24,7 @@ start() {
     printf "Do you wish to recreate the images? (y/n) ";
     read -r opn;
     if [ "${opn:-n}" = "y" ]; then
-        if ! HOST_UID=$(id -u) HOST_GID=$(id -g) docker -D compose build --no-cache; then
+        if ! HOST_UID=$(id -u) HOST_GID=$(id -g) docker -D compose build; then
             printf "\nDocker build failed. Solve the errors displayed above and try again\n" &&
             exit 1;
         fi

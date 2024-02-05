@@ -49,10 +49,10 @@ remove_node_modules() {
 }
 
 remove_database() {
-    printf "Do you wish to remove database folder? (requires sudo permissions) (y/n) ";
+    printf "Do you wish to remove database folder? (y/n) ";
     read -r opn;
     if [ "${opn:-n}" = "y" ]; then
-        sudo rm -rf "$DB_DATA_FOLDER";
+        rm -rf "$DB_DATA_FOLDER";
     fi
 
     return 0;

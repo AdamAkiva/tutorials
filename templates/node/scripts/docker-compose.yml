@@ -32,15 +32,17 @@ services:
   #   # you use this template?)
   #   # See: https://hub.docker.com/_/postgres/tags
   #   image: postgres:alpine
+  #   user: ${HOST_UID}:${HOST_GID}
   #   environment:
   #     - POSTGRES_USER=admin
   #     - POSTGRES_PASSWORD=admin
   #     - POSTGRES_DB=node-template-dev
   #   volumes:
-  #     - ../db-dev-data/pg:/var/lib/postgresql/data:rw
+  #     - ../db-dev-data:/var/lib/postgresql/data:rw
+  #     - /etc/passwd:/etc/passwd:ro # See: https://github.com/docker-library/docs/blob/master/postgres/README.md#arbitrary---user-notes
   #   stop_grace_period: 2s
   #   healthcheck:
-  #     test: pg_isready -p 5432 -U admin -d node-template-pg-dev
+  #     test: pg_isready -p 5432 -U admin -d node-template-dev
   #     interval: 3s
   #     timeout: 2s
   #     retries: 5
@@ -74,6 +76,8 @@ services:
       context: ../be
       dockerfile: Dockerfile
       target: be-dev
+      args:
+        DOCKER_BUILDKIT: 1
     user: ${HOST_UID}:${HOST_GID}
     environment:
       - SERVER_PORT=9865
@@ -126,6 +130,8 @@ services:
       context: ../fe
       dockerfile: Dockerfile
       target: fe-dev
+      args:
+        DOCKER_BUILDKIT: 1
     user: ${HOST_UID}:${HOST_GID}
     environment:
       - CLIENT_PORT=9866
