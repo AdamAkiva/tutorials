@@ -1,6 +1,6 @@
 ## JSDoc vs Typescript debate, what should you use?
 
-### Last update: 17.01.2024
+### Last update: 07.02.2024
 
 ### 5 minutes read
 
@@ -62,7 +62,9 @@ With that out of the way let's compare them:
 - Simple
 - Most IDEs support it
 - No additional configurations needed by the developer. Just add comments
-  **Disadvantages:**
+
+**Disadvantages:**
+
 - Limited options, there are so many tags able to be used
 - No code reuse (in contrast to Typescript types/interfaces)
 - It is a comment, and like the relationship between every developer and comments,
@@ -79,7 +81,9 @@ With that out of the way let's compare them:
 - Can add additional language features which are transpiled to supporting
   Javascript code on runtime (enum as an example).
 - Full IDEs support
-  **Disadvantages**
+
+**Disadvantages**
+
 - Complex. It is basically another language to learn
 - Complex configuration. Typescript makes a project setup much more complicated
   than just creating a Javascript file and running it.
