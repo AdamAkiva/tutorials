@@ -3,14 +3,14 @@
 UID=$(id -u);
 GID=$(id -g);
 
-SCRIPT_DIR=$(dirname $(realpath "$0"));
+SCRIPT_DIR=$(dirname "$(realpath "$0")");
 PROJ_ROOT_DIR=$(dirname "$SCRIPT_DIR");
-BE_DIR="$PROJ_ROOT_DIR"/be;
-FE_DIR="$PROJ_ROOT_DIR"/fe;
+DB_DATA_FOLDER="$PROJ_ROOT_DIR"/db-dev-data;
 
-DB_DATA_FOLDER=db-dev-data;
-TEST_COVERAGE_FOLDER="$BE_DIR"/__tests__/coverage;
+BE_DIR="$PROJ_ROOT_DIR"/be;
 BE_MODULES_FOLDER="$BE_DIR"/node_modules;
+
+FE_DIR="$PROJ_ROOT_DIR"/fe;
 FE_MODULES_FOLDER="$FE_DIR"/node_modules;
 
 ####################################################################################
@@ -32,16 +32,6 @@ remove() {
     if ! UID="$UID" GID="$GID" docker compose down; then
         printf "\nDocker removal failed, solve the error/s and try again\n\n";
         exit 1;
-    fi
-
-    return 0;
-}
-
-remove_test_coverage() {
-    printf "Do you wish to remove tests coverage folder? (y/n) ";
-    read -r opn;
-    if [ "${opn:-n}" = "y" ]; then
-        rm -rf "$TEST_COVERAGE_FOLDER";
     fi
 
     return 0;
@@ -74,7 +64,6 @@ cd "$SCRIPT_DIR" || exit 1;
 check_prerequisites;
 remove;
 
-remove_test_coverage;
 remove_node_modules;
 remove_database;
 

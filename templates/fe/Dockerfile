@@ -1,4 +1,4 @@
-FROM node:20.11-alpine as fe-base
+FROM node:18.19-alpine as fe-base
 
 # Install dependencies
 RUN apk update && apk add curl

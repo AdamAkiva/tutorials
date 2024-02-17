@@ -3,11 +3,14 @@
 UID=$(id -u);
 GID=$(id -g);
 
-SCRIPT_DIR=$(dirname $(realpath "$0"));
+SCRIPT_DIR=$(dirname "$(realpath "$0")");
 PROJ_ROOT_DIR=$(dirname "$SCRIPT_DIR");
+DB_DATA_FOLDER="$PROJ_ROOT_DIR"/db-dev-data;
+
 BE_DIR="$PROJ_ROOT_DIR"/be;
 
-DB_DATA_FOLDER=db-dev-data;
+NPM_BE_CACHE_FOLDER="cache/be";
+NPM_FE_CACHE_FOLDER="cache/fe";
 ERR_LOG_FILE=compose_err_logs.txt;
 
 ####################################################################################
@@ -26,7 +29,13 @@ check_prerequisites() {
 }
 
 start() {
-    printf "Building Application...\n\n" && mkdir -p "$PROJ_ROOT_DIR"/"$DB_DATA_FOLDER";
+    rm "$ERR_LOG_FILE" 1> /dev/null 2> /dev/null;
+
+    # When a folder exists and is only populated the permissions of the populated
+    # file(s) take on the permission of the root folder, hence the current user
+    mkdir -p "$DB_DATA_FOLDER" "$NPM_BE_CACHE_FOLDER" "$NPM_FE_CACHE_FOLDER";
+
+    printf "Building Application...\n\n";
 
     printf "Do you wish to recreate the images? (y/n) ";
     read -r opn;
@@ -37,19 +46,17 @@ start() {
         fi
     fi
 
-    if ! UID="$UID" GID="$GID" docker compose up --timestamps -d --wait; then
-        for service in $(docker compose config --services); do
+    if ! UID="$UID" GID="$GID" docker compose up -d --wait; then
+        for service in $(UID="$UID" GID="$GID" docker compose config --services); do
             health_status=$(docker inspect --format '{{.State.Health.Status}}' "$service");
             if [ "$health_status" != "healthy" ]; then
-                docker compose logs --no-color "$service" >> "$ERR_LOG_FILE" 2>&1;
+                docker logs "$service" 2>> "$ERR_LOG_FILE";
             fi
         done
         cat "$ERR_LOG_FILE";
         printf "\n\nDocker run failed. The logs are displayed above. Use them to solve the issue(s) and try again\n\n";
         exit 1;
     fi
-
-    rm "$ERR_LOG_FILE" 1> /dev/null 2> /dev/null;
 
     return 0;
 }

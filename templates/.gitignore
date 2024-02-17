@@ -9,6 +9,7 @@
 **/coverage/
 **/db-dev-data/
 **/node_modules/
+**/cache/
 
 # Exclude source files
 !*.ts

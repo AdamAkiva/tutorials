@@ -120,7 +120,7 @@ services:
         condition: service_healthy
     #   node-template-redis-dev:
     #     condition: service_healthy
-    command: /bin/sh -c "npm install --d && npm run start:dev"
+    command: npm run _install-start
 
   node-template-fe-dev:
     hostname: node-template-fe-dev
@@ -153,4 +153,4 @@ services:
       timeout: 3s
       retries: 5
       start_period: 30s
-    command: /bin/sh -c "npm install --d && npm run start:dev"
+    command: npm run _install-start
