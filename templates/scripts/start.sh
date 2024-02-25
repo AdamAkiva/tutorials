@@ -1,10 +1,17 @@
 #!/bin/sh
 
-DB_DATA_FOLDER=../db-dev-data;
-ERR_LOG_FILE=compose_err_logs.txt;
-
 UID=$(id -u);
 GID=$(id -g);
+
+SCRIPT_DIR=$(dirname "$(realpath "$0")");
+PROJ_ROOT_DIR=$(dirname "$SCRIPT_DIR");
+DB_DATA_FOLDER="$PROJ_ROOT_DIR"/db-dev-data;
+
+BE_DIR="$PROJ_ROOT_DIR"/be;
+
+NPM_BE_CACHE_FOLDER="cache/be";
+NPM_FE_CACHE_FOLDER="cache/fe";
+ERR_LOG_FILE=compose_err_logs.txt;
 
 ####################################################################################
 
@@ -22,26 +29,28 @@ check_prerequisites() {
 }
 
 start() {
-    printf "Building Application...\n\n" && mkdir -p "$DB_DATA_FOLDER";
+    rm "$ERR_LOG_FILE" 1> /dev/null 2> /dev/null;
+
+    # When a folder exists and is only populated the permissions of the populated
+    # file(s) take on the permission of the root folder, hence the current user
+    mkdir -p "$DB_DATA_FOLDER" "$NPM_BE_CACHE_FOLDER" "$NPM_FE_CACHE_FOLDER";
+
+    printf "Building Application...\n\n";
 
     printf "Do you wish to recreate the images? (y/n) ";
     read -r opn;
     if [ "${opn:-n}" = "y" ]; then
-        if ! UID="$UID" GID="$GID" docker -D compose build; then
+        if ! UID="$UID" GID="$GID" docker compose build; then
             printf "\nDocker build failed. Solve the errors displayed above and try again\n";
             exit 1;
         fi
     fi
 
-    run_docker && return 0;
-}
-
-run_docker() {
-    if ! UID="$UID" GID="$GID" docker -D compose up --timestamps -d --wait; then
-        for service in $(docker compose config --services); do
-            status=$(docker inspect --format '{{.State.Health.Status}}' "$service");
-            if [ "$status" != "healthy" ]; then
-                docker compose logs --no-color "$service" >> "$ERR_LOG_FILE" 2>&1;
+    if ! UID="$UID" GID="$GID" docker compose up -d --wait; then
+        for service in $(UID="$UID" GID="$GID" docker compose config --services); do
+            health_status=$(docker inspect --format '{{.State.Health.Status}}' "$service");
+            if [ "$health_status" != "healthy" ]; then
+                docker logs "$service" 2>> "$ERR_LOG_FILE";
             fi
         done
         cat "$ERR_LOG_FILE";
@@ -49,14 +58,12 @@ run_docker() {
         exit 1;
     fi
 
-    rm "$ERR_LOG_FILE" 1> /dev/null 2> /dev/null;
-
     return 0;
 }
 
 ####################################################################################
 
-cd "$(dirname "$0")" || exit 1;
+cd "$SCRIPT_DIR" || exit 1;
 
 check_prerequisites;
 start;

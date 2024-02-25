@@ -1,12 +1,17 @@
 #!/bin/sh
 
-DB_DATA_FOLDER=../db-dev-data;
-TEST_COVERAGE_FOLDER=../be/__tests__/coverage;
-FE_MODULES_FOLDER=../fe/node_modules;
-BE_MODULES_FOLDER=../be/node_modules;
-
 UID=$(id -u);
 GID=$(id -g);
+
+SCRIPT_DIR=$(dirname "$(realpath "$0")");
+PROJ_ROOT_DIR=$(dirname "$SCRIPT_DIR");
+DB_DATA_FOLDER="$PROJ_ROOT_DIR"/db-dev-data;
+
+BE_DIR="$PROJ_ROOT_DIR"/be;
+BE_MODULES_FOLDER="$BE_DIR"/node_modules;
+
+FE_DIR="$PROJ_ROOT_DIR"/fe;
+FE_MODULES_FOLDER="$FE_DIR"/node_modules;
 
 ####################################################################################
 
@@ -32,21 +37,11 @@ remove() {
     return 0;
 }
 
-remove_test_coverage() {
-    printf "Do you wish to remove tests coverage folder? (y/n) ";
-    read -r opn;
-    if [ "${opn:-n}" = "y" ]; then
-        rm -rf "$TEST_COVERAGE_FOLDER";
-    fi
-
-    return 0;
-}
-
 remove_node_modules() {
     printf "Do you wish to remove node_modules folder? (y/n) ";
     read -r opn;
     if [ "${opn:-n}" = "y" ]; then
-        rm -rf "$FE_MODULES_FOLDER" "$BE_MODULES_FOLDER";
+        rm -rf "$BE_MODULES_FOLDER" "$FE_MODULES_FOLDER";
     fi
 
     return 0;
@@ -64,12 +59,11 @@ remove_database() {
 
 ####################################################################################
 
-cd "$(dirname "$0")" || exit 1;
+cd "$SCRIPT_DIR" || exit 1;
 
 check_prerequisites;
 remove;
 
-remove_test_coverage;
 remove_node_modules;
 remove_database;
 
