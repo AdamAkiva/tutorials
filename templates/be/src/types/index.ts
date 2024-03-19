@@ -5,9 +5,9 @@ import compress from 'compression';
 import cors from 'cors';
 import express, {
   type Application,
+  type Response as ExpressResponse,
   type NextFunction,
-  type Request,
-  type Response
+  type Request
 } from 'express';
 
 /**********************************************************************************/
@@ -25,6 +25,14 @@ export type SwapKeysValue<T, K extends keyof T, V> = Omit<T, K> & {
 export type ResolvedValue<T> = T extends (...args: any) => any
   ? PromiseFulfilledResult<Awaited<ReturnType<T>>>
   : PromiseFulfilledResult<Awaited<T>>;
+
+/**********************************************************************************/
+
+export type Response = ExpressResponse<unknown, { ctx: RequestContext }>;
+export type RequestContext = {
+  // TODO This should hold the res.locals.ctx objects which are the values related
+  // to the context of a request (such as DatabaseHandler, logger, etc...)
+};
 
 /**********************************************************************************/
 
@@ -51,6 +59,5 @@ export {
   type Application,
   type NextFunction,
   type Request,
-  type Response,
   type Server
 };

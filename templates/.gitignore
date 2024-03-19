@@ -16,7 +16,7 @@
 !*.tsx
 !index.html
 !*.css
-!.eslintrc.cjs
+!eslint.config.js
 !loader.js
 
 # Etc
@@ -27,6 +27,3 @@
 !*.yml
 !Dockerfile
 !.gitignore
-
-# Block previously allowed files
-**/settings.json

@@ -39,9 +39,9 @@ const checkRuntimeEnv = (mode?: string): mode is Mode => {
 
 const checkEnvVariables = (mode: Mode) => {
   let missingValues = '';
-  checkMissingEnvVariables(mode).forEach((val, key) => {
-    if (!process.env[key]) {
-      missingValues += `* ${val}\n`;
+  checkMissingEnvVariables(mode).forEach((val) => {
+    if (!process.env[val]) {
+      missingValues += `* Missing ${val} environment variable\n`;
     }
   });
   if (missingValues) {
@@ -53,20 +53,17 @@ const checkEnvVariables = (mode: Mode) => {
 };
 
 const checkMissingEnvVariables = (mode: Mode) => {
-  const errMap = new Map<string, string>([
-    ['SERVER_PORT', `Missing 'SERVER_PORT', env variable`],
-    ['SERVER_URL', `Missing 'SERVER_URL', env variable`],
-    ['API_ROUTE', `Missing 'API_ROUTE', env variable`],
-    ['HEALTH_CHECK_ROUTE', `Missing 'HEALTH_CHECK_ROUTE', env variable`],
-    ['ALLOWED_ORIGINS', `Missing 'ALLOWED_ORIGINS', env variable`]
-  ]);
+  const envVars = [
+    'SERVER_PORT',
+    'SERVER_URL',
+    'API_ROUTE',
+    'HEALTH_CHECK_ROUTE',
+    'ALLOWED_ORIGINS'
+  ];
 
   if (mode === 'development') {
-    errMap.set(
-      'SERVER_DEBUG_PORT',
-      `Missing 'SERVER_DEBUG_PORT', env variable`
-    );
+    envVars.push('SERVER_DEBUG_PORT');
   }
 
-  return errMap;
+  return envVars;
 };

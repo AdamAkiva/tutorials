@@ -1,4 +1,4 @@
-FROM node:20.11-alpine as be-base
+FROM node:18.19.1-alpine as be-base
 
 # Install dependencies
 RUN apk update && apk add curl
