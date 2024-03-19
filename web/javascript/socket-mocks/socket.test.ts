@@ -1,40 +1,48 @@
-import { createServer, type Server } from "node:http";
-
 import { Server as SocketServer, type Socket as ServerSocket } from "socket.io";
 import { io as ioc, type Socket as ClientSocket } from "socket.io-client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 /**********************************************************************************/
 
-// The use of new Promise is the vitest way to make this work: https://jestjs.io/docs/asynchronous#callbacks
-// Event emitters (sockets in our case) use callbacks, therefore we must use
-// this syntax
+// Sources:
+// Socket io test docs: https://socket.io/docs/v4/testing/
+// Typescript socket io: https://github.com/socketio/socket.io/issues/3742#issuecomment-796801645
+// Callback to promise: https://exploringjs.com/es6/ch_promises.html#sec_creating-using-promises
 
-let httpServer: Server;
+type ServerEvents = {
+  hello1: (arg: "world1") => void;
+  hello2: (cb: (arg: "world2") => void) => void;
+  hello3: (cb: (arg: "world3") => void) => void;
+};
+
+type ClientEvents = {
+  hello1: (arg: "world1") => void;
+  hello2: (cb: (arg: "world2") => void) => void;
+  hello3: (cb: (arg: "world3") => void) => void;
+};
+
+/**********************************************************************************/
+
 let wss: SocketServer;
-let serverSocket: ServerSocket;
-let clientSocket: ClientSocket;
+let serverSocket: ServerSocket<ServerEvents>;
+let clientSocket: ClientSocket<ClientEvents>;
 
 beforeAll(() => {
   return new Promise<void>((resolve) => {
     const port = 3000;
 
-    httpServer = createServer();
-    wss = new SocketServer(httpServer);
-    httpServer.listen(port, () => {
-      clientSocket = ioc(`http://localhost:${port}`);
-      wss.on("connection", (socket) => {
-        serverSocket = socket;
-      });
-      clientSocket.on("connect", resolve);
+    wss = new SocketServer(port);
+    clientSocket = ioc(`http://localhost:${port}`);
+    wss.on("connection", (socket) => {
+      serverSocket = socket;
     });
+    clientSocket.on("connect", resolve);
   });
 });
 
 afterAll(() => {
   wss.close();
   clientSocket.close();
-  httpServer.close();
 });
 
 /**********************************************************************************/
@@ -42,34 +50,34 @@ afterAll(() => {
 describe("Tests", () => {
   it("Basic emit", () => {
     return new Promise<void>((resolve) => {
-      clientSocket.on("hello", (arg) => {
+      clientSocket.on("hello1", (arg) => {
         expect(typeof arg).toStrictEqual("string");
-        expect(arg).toStrictEqual("world");
+        expect(arg).toStrictEqual("world1");
         resolve();
       });
-      serverSocket.emit("hello", "world");
+      serverSocket.emit("hello1", "world1");
     });
   });
 
   it("Basic emit with ack", () => {
     return new Promise<void>((resolve) => {
-      serverSocket.on("hello", (cb) => {
-        cb("world");
+      serverSocket.on("hello2", (cb) => {
+        cb("world2");
       });
-      clientSocket.emit("hello", (arg) => {
+      clientSocket.emit("hello2", (arg) => {
         expect(typeof arg).toStrictEqual("string");
-        expect(arg).toStrictEqual("world");
+        expect(arg).toStrictEqual("world2");
         resolve();
       });
     });
   });
 
   it("Basic emit with ack (promise)", async () => {
-    serverSocket.on("hello", (cb) => {
-      cb("world");
+    serverSocket.on("hello3", (cb) => {
+      cb("world3");
     });
-    const res = await clientSocket.emitWithAck("hello");
+    const res = await clientSocket.emitWithAck("hello3");
     expect(typeof res).toStrictEqual("string");
-    expect(res).toStrictEqual("world");
+    expect(res).toStrictEqual("world3");
   });
 });
