@@ -19,11 +19,13 @@ FE_MODULES_FOLDER="$FE_DIR"/node_modules;
 
 check_prerequisites() {
     if ! docker --version 1> /dev/null 2> /dev/null; then
-        printf "\nDocker engine not installed, you may follow this: https://docs.docker.com/engine/install\n\n";
+        printf "\nDocker engine not installed, you may follow this: https://docs.docker.com/engine/install";
+        printf "\n\n";
         exit 1;
     fi
     if ! docker compose version 1> /dev/null 2> /dev/null; then
-        printf "\nDocker compose not installed, you may follow this: https://docs.docker.com/compose/install/linux/#install-the-plugin-manually\n\n";
+        printf "\nDocker compose not installed, you may follow this: https://docs.docker.com/compose/install/linux/#install-the-plugin-manually";
+        printf "\n\n";
         exit 1;
     fi
 

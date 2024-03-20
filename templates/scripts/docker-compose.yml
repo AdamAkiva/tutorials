@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   # Database options for your convince, pick whichever one/s you wish and remove
   # the rest
