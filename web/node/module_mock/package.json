@@ -1,0 +1,22 @@
+{
+  "name": "module-mock",
+  "version": "1.0.0",
+  "description": "An example on how to use module mock in ES6 with Jest",
+  "type": "module",
+  "main": "./src/main.js",
+  "scripts": {
+    "start": "node ./src/main.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "dependencies": {
+    "@werxpace/server-utils": "~0.0.45",
+    "express": "~4.19.1"
+  },
+  "devDependencies": {
+    "jest": "~29.7.0",
+    "supertest": "~6.3.4"
+  },
+  "author": "Adam Akiva",
+  "license": "UNLICENSED",
+  "private": true
+}
