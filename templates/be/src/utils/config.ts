@@ -10,9 +10,7 @@ import {
 /**********************************************************************************/
 
 export function getEnv(): EnvironmentVariables {
-  const mode = process.env.NODE_ENV as Mode;
-
-  checkRuntimeEnv(mode);
+  const mode = checkRuntimeEnv(process.env.NODE_ENV);
   checkEnvVariables(mode);
 
   return {
@@ -27,9 +25,9 @@ export function getEnv(): EnvironmentVariables {
   };
 }
 
-function checkRuntimeEnv(mode?: string): mode is Mode {
+function checkRuntimeEnv(mode?: string) {
   if (isDevelopmentMode(mode) || isTestMode(mode) || isProductionMode(mode)) {
-    return true;
+    return mode as Mode;
   }
 
   console.error(
