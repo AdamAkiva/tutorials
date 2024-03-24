@@ -1,8 +1,15 @@
 import type { EnvironmentVariables, Mode } from '../types/index.js';
 
+import { ERR_CODES } from './constants.js';
+import {
+  isDevelopmentMode,
+  isProductionMode,
+  isTestMode
+} from './functions.js';
+
 /**********************************************************************************/
 
-export const getEnv = (): EnvironmentVariables => {
+export function getEnv(): EnvironmentVariables {
   const mode = process.env.NODE_ENV as Mode;
 
   checkRuntimeEnv(mode);
@@ -18,13 +25,10 @@ export const getEnv = (): EnvironmentVariables => {
       allowedOrigins: new Set(process.env.ALLOWED_ORIGINS!.split(','))
     }
   };
-};
+}
 
-const checkRuntimeEnv = (mode?: string): mode is Mode => {
-  if (
-    mode &&
-    (mode === 'development' || mode === 'test' || mode === 'production')
-  ) {
+function checkRuntimeEnv(mode?: string): mode is Mode {
+  if (isDevelopmentMode(mode) || isTestMode(mode) || isProductionMode(mode)) {
     return true;
   }
 
@@ -33,11 +37,10 @@ const checkRuntimeEnv = (mode?: string): mode is Mode => {
       ' Unresolvable, exiting...'
   );
 
-  process.kill(process.pid, 'SIGTERM');
-  throw new Error('Graceful shutdown');
-};
+  process.exit(ERR_CODES.EXIT_NO_RESTART);
+}
 
-const checkEnvVariables = (mode: Mode) => {
+function checkEnvVariables(mode: Mode) {
   let missingValues = '';
   checkMissingEnvVariables(mode).forEach((val) => {
     if (!process.env[val]) {
@@ -47,12 +50,11 @@ const checkEnvVariables = (mode: Mode) => {
   if (missingValues) {
     console.error(`\nMissing the following env vars: ${missingValues}`);
 
-    process.kill(process.pid, 'SIGTERM');
-    throw new Error('Graceful shutdown');
+    process.exit(ERR_CODES.EXIT_NO_RESTART);
   }
-};
+}
 
-const checkMissingEnvVariables = (mode: Mode) => {
+function checkMissingEnvVariables(mode: Mode) {
   const envVars = [
     'SERVER_PORT',
     'SERVER_URL',
@@ -66,4 +68,4 @@ const checkMissingEnvVariables = (mode: Mode) => {
   }
 
   return envVars;
-};
+}

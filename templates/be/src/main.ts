@@ -23,11 +23,11 @@ import {
   type Server
 } from './types/index.js';
 
-import { getEnv } from './utils/index.js';
+import { getEnv, StatusCodes } from './utils/index.js';
 
 /**********************************************************************************/
 
-const startServer = async () => {
+async function startServer() {
   const { mode, server: serverEnv } = getEnv();
 
   const app = express();
@@ -45,23 +45,31 @@ const startServer = async () => {
     );
   });
 
-  // Once since if any of these errors occur, the server will be shutdown, see:
-  // https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html#error-exception-handling
-  // For reasoning
-  process.once('unhandledRejection', globalErrorHandler(server, 'rejection'));
-  process.once('uncaughtException', globalErrorHandler(server, 'exception'));
-};
+  process
+    .on('warning', console.warn)
+    .once('SIGINT', () => {
+      server.close();
+    })
+    .once('SIGQUIT', () => {
+      server.close();
+    })
+    .once('SIGTERM', () => {
+      server.close();
+    })
+    // Once since if any of these errors occur, the server will be shutdown, see:
+    // https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html#error-exception-handling
+    // For reasoning
+    .once('unhandledRejection', globalErrorHandler(server, 'rejection'))
+    .once('uncaughtException', globalErrorHandler(server, 'exception'));
+}
 
-const attachMiddleware = async (
-  app: Application,
-  allowedOrigins: Set<string>
-) => {
+async function attachMiddleware(app: Application, allowedOrigins: Set<string>) {
   // No need to give the clients the information on which framework we are using
   app.disable('etag').disable('x-powered-by');
 
   app.use(
     // If you build a server which should not receive any browser requests,
-    // feel free to remove cors
+    // feel free to remove cors from here and as a dependency
     cors({
       // '*' and ['*'] are not the same, hence need to explicitly check for it
       origin:
@@ -94,9 +102,9 @@ const attachMiddleware = async (
     }),
     compress()
   );
-};
+}
 
-const attachRoutes = (app: Application, healthCheckRoute: string) => {
+function attachRoutes(app: Application, healthCheckRoute: string) {
   app.get(`/${healthCheckRoute}`, (_, res) => {
     let notReadyMsg = '';
     // Database/Any other service readiness check should have the same format
@@ -110,36 +118,46 @@ const attachRoutes = (app: Application, healthCheckRoute: string) => {
       notReadyMsg = `Application is not available: ${notReadyMsg}`;
     }
     if (notReadyMsg) {
-      return res.status(503).send(notReadyMsg);
+      return res.status(StatusCodes.GATEWAY_TIMEOUT).send(notReadyMsg);
     }
 
-    return res.status(204).end();
+    return res.status(StatusCodes.NO_CONTENT).end();
   });
-};
+}
 
-const attachServerConfigurations = (server: Server) => {
-  // See: https://nodejs.org/api/http.html
-  // Change these values according to the server needs. These values (imo) are
-  // better defaults than the one node supplies
-  server.maxHeadersCount = 256;
-  server.headersTimeout = 16_000; // millis
-  server.requestTimeout = 32_000; // millis
-  server.timeout = 524_288; // millis
-  server.maxRequestsPerSocket = 0; // No request limit
-  server.keepAliveTimeout = 4_000; // millis
-};
+function attachServerConfigurations(server: Server) {
+  // Every configuration referring to sockets here, talks about network/tcp
+  // socket NOT websockets. Network socket is the underlying layer for http
+  // request (in this case). In short, the socket options refer to a "standard"
+  // connection from a client
+  server.maxHeadersCount = 50;
+  server.headersTimeout = 20_000; // millis
+  server.requestTimeout = 20_000; // millis
+  // Connection close will terminate the tcp socket once the payload was
+  // transferred and acknowledged. This setting is for the rare cases where,
+  // for some reason, the tcp socket is left alive
+  server.timeout = 600_000; // millis
+  // See: https://github.com/nodejs/node/issues/40071
+  // Leaving this without any limit will cause the server to reuse the
+  // connection indefinitely (in theory). As a result, load balancing will
+  // have very little effects if more instances of the server are brought up
+  // by the deployment orchestration tool.
+  // As for a good number, it depends on the application traffic.
+  // The current value is random power of 2 which we liked
+  server.maxRequestsPerSocket = 100;
+  server.keepAliveTimeout = 10_000; // millis
+}
 
-const globalErrorHandler = (
-  server: Server,
-  reason: 'exception' | 'rejection'
-) => {
+function globalErrorHandler(server: Server, reason: 'exception' | 'rejection') {
   return (err: unknown) => {
     console.error(`Unhandled ${reason}. This may help:\n ${inspect(err)}`);
 
     server.close();
-    process.exitCode = 1;
+
+    // See: https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html#error-exception-handling
+    process.exit(1);
   };
-};
+}
 
 /**********************************************************************************/
 
