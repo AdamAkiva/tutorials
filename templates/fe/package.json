@@ -40,7 +40,7 @@
     "vite": "~5.1.6"
   },
   "author": "Adam Akiva",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "repository": {
     "type": "git",

@@ -17,6 +17,6 @@
     "supertest": "~6.3.4"
   },
   "author": "Adam Akiva",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true
 }

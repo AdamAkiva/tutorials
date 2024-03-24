@@ -8,6 +8,6 @@
     "start": "node ./README_EXAMPLE.js"
   },
   "author": "Adam Akiva",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true
 }
