@@ -1,0 +1,10 @@
+{
+  "restartable": "rs",
+  "watch": ["./"],
+  "execMap": {
+    "ts": "node --nolazy --enable-source-maps --trace-uncaught --trace-warnings --import ./loader.js"
+  },
+  "ext": "ts,json",
+  "signal": "SIGTERM",
+  "delay": "333ms"
+}

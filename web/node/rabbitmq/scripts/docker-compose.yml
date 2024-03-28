@@ -1,0 +1,22 @@
+services:
+  rabbitmq:
+    hostname: rabbitmq
+    container_name: rabbitmq
+    restart: unless-stopped
+    image: rabbitmq:3.13.0-alpine
+    user: ${UID}:${GID}
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    volumes:
+      - ../mq-data:/var/lib/rabbitmq:rw
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    stop_grace_period: 2s
+    ports:
+      - 5672:5672
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
