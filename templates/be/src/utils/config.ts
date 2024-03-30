@@ -1,11 +1,10 @@
-import type { EnvironmentVariables, Mode } from '../types/index.js';
-
 import { ERR_CODES } from './constants.js';
 import {
   isDevelopmentMode,
   isProductionMode,
   isTestMode
 } from './functions.js';
+import type { EnvironmentVariables, Mode } from './types/index.js';
 
 /**********************************************************************************/
 
@@ -19,7 +18,10 @@ export function getEnv(): EnvironmentVariables {
       port: process.env.SERVER_PORT!,
       url: process.env.SERVER_URL!,
       apiRoute: process.env.API_ROUTE!,
-      healthCheckRoute: process.env.HEALTH_CHECK_ROUTE!,
+      healthCheck: {
+        route: process.env.HEALTH_CHECK_ROUTE!,
+        allowedHosts: new Set(process.env.ALLOWED_HOSTS!.split(','))
+      },
       allowedOrigins: new Set(process.env.ALLOWED_ORIGINS!.split(','))
     }
   };
@@ -58,6 +60,7 @@ function checkMissingEnvVariables(mode: Mode) {
     'SERVER_URL',
     'API_ROUTE',
     'HEALTH_CHECK_ROUTE',
+    'ALLOWED_HOSTS',
     'ALLOWED_ORIGINS'
   ];
 

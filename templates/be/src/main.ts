@@ -1,11 +1,13 @@
 /**
- * Making sure the first thing the code does is changing the captureRejections
+ * DON'T change the import to the local one, this needs to happen before everything.
+ * This makes sure the first thing the code does is changing the captureRejections
  * option to true to account for all new instances of EventEmitter. If every
  * module only exports functions and has no global variables, then, in theory
  * you could do it in a later stage. With that said we don't want to trust the
  * initialization order, so we make sure it is the first thing that is being done
  * When the server runs
  */
+//
 import { EventEmitter } from 'node:events';
 
 // See: https://nodejs.org/api/events.html#capture-rejections-of-promises
@@ -13,40 +15,55 @@ EventEmitter.captureRejections = true;
 
 /**********************************************************************************/
 
-import {
-  compress,
-  cors,
-  createServer,
-  express,
-  inspect,
-  type Application,
-  type Server
-} from './types/index.js';
-
-import { getEnv, StatusCodes } from './utils/index.js';
+import { HttpServer } from './server/index.js';
+import { Logger, generalDebug, getEnv } from './utils/index.js';
 
 /**********************************************************************************/
 
 async function startServer() {
+  generalDebug('Application starting...');
+
   const { mode, server: serverEnv } = getEnv();
 
-  const app = express();
-  const server = createServer(app);
+  const logger = new Logger();
+  const { handler: loggerHandler, logMiddleware } = logger;
 
-  attachServerConfigurations(server);
-  await attachMiddleware(app, serverEnv.allowedOrigins);
+  const server = new HttpServer(mode, loggerHandler);
 
-  attachRoutes(app, serverEnv.healthCheckRoute);
+  // The order matters!
+  // These calls setup express middleware, and the configuration middleware
+  // must be used BEFORE the routes
+  await server.attachConfigurationMiddlewares(serverEnv.allowedOrigins);
+  server.attachRoutesMiddlewares({
+    allowedHosts: serverEnv.healthCheck.allowedHosts,
+    // The reason for it being a callback it the ability to unit test it
+    readyCheck: async () => {
+      let notReadyMsg = '';
+      try {
+        // Put the health check(s) here
+        await Promise.resolve(true);
+      } catch (err) {
+        loggerHandler.error(err, 'Database error');
+        notReadyMsg += '\nDatabase is unavailable';
+      }
 
-  server.listen(serverEnv.port, () => {
-    console.info(
-      `Server is running in '${mode}' mode on:` +
-        ` ${serverEnv.url}:${serverEnv.port}/${serverEnv.apiRoute}`
-    );
+      return notReadyMsg;
+    },
+    logMiddleware: logMiddleware,
+    routes: {
+      api: `/${serverEnv.apiRoute}`,
+      health: `/${serverEnv.healthCheck.route}`
+    }
   });
 
+  // Attaching the event handlers after the server initialization for two reasons.
+  // Firstly, if an error occurred before this part, it is 98.7% a developer
+  // mistake with the initialization of the server
+  // Secondly, this is the first point where there are resources to cleanup
+  // if something failed (partially true since the database is ready before
+  // the server, but again, that goes more into the first point)
   process
-    .on('warning', console.warn)
+    .on('warning', loggerHandler.warn)
     .once('SIGINT', () => {
       server.close();
     })
@@ -56,101 +73,24 @@ async function startServer() {
     .once('SIGTERM', () => {
       server.close();
     })
-    // Once since if any of these errors occur, the server will be shutdown, see:
-    // https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html#error-exception-handling
-    // For reasoning
     .once('unhandledRejection', globalErrorHandler(server, 'rejection'))
     .once('uncaughtException', globalErrorHandler(server, 'exception'));
-}
 
-async function attachMiddleware(app: Application, allowedOrigins: Set<string>) {
-  // No need to give the clients the information on which framework we are using
-  app.disable('etag').disable('x-powered-by');
-
-  app.use(
-    // If you build a server which should not receive any browser requests,
-    // feel free to remove cors from here and as a dependency
-    cors({
-      // '*' and ['*'] are not the same, hence need to explicitly check for it
-      origin:
-        allowedOrigins.size === 1
-          ? Array.from(allowedOrigins)[0]
-          : Array.from(allowedOrigins),
-      // Add or remove if you need any additional methods
-      methods: ['HEAD', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-    }),
-    // This is the result of a bug with helmet typescript support, if helmet
-    // version is updated, you may check if this is still needed (the dynamic
-    // import)
-    (await import('helmet')).default({
-      contentSecurityPolicy: true /* require-corp */,
-      crossOriginOpenerPolicy: { policy: 'same-origin' },
-      crossOriginResourcePolicy: { policy: 'same-origin' },
-      originAgentCluster: true,
-      referrerPolicy: { policy: 'no-referrer' },
-      strictTransportSecurity: {
-        maxAge: 15_552_000, // seconds
-        includeSubDomains: true
-      },
-      xContentTypeOptions: true,
-      xDnsPrefetchControl: false,
-      xDownloadOptions: true,
-      xFrameOptions: { action: 'sameorigin' },
-      xPermittedCrossDomainPolicies: { permittedPolicies: 'none' },
-      xPoweredBy: false,
-      xXssProtection: true
-    }),
-    compress()
-  );
-}
-
-function attachRoutes(app: Application, healthCheckRoute: string) {
-  app.get(`/${healthCheckRoute}`, (_, res) => {
-    let notReadyMsg = '';
-    // Database/Any other service readiness check should have the same format
-    // as below
-    try {
-      // Put the check here
-    } catch (err) {
-      notReadyMsg += '\nDatabase is unavailable';
-    }
-    if (notReadyMsg) {
-      notReadyMsg = `Application is not available: ${notReadyMsg}`;
-    }
-    if (notReadyMsg) {
-      return res.status(StatusCodes.GATEWAY_TIMEOUT).send(notReadyMsg);
-    }
-
-    return res.status(StatusCodes.NO_CONTENT).end();
+  server.listen(serverEnv.port, () => {
+    loggerHandler.info(
+      `Server is running in '${mode}' mode on:` +
+        ` ${serverEnv.url}:${serverEnv.port}/${serverEnv.apiRoute}`
+    );
+    generalDebug('Application is ready');
   });
 }
 
-function attachServerConfigurations(server: Server) {
-  // Every configuration referring to sockets here, talks about network/tcp
-  // socket NOT websockets. Network socket is the underlying layer for http
-  // request (in this case). In short, the socket options refer to a "standard"
-  // connection from a client
-  server.maxHeadersCount = 50;
-  server.headersTimeout = 20_000; // millis
-  server.requestTimeout = 20_000; // millis
-  // Connection close will terminate the tcp socket once the payload was
-  // transferred and acknowledged. This setting is for the rare cases where,
-  // for some reason, the tcp socket is left alive
-  server.timeout = 600_000; // millis
-  // See: https://github.com/nodejs/node/issues/40071
-  // Leaving this without any limit will cause the server to reuse the
-  // connection indefinitely (in theory). As a result, load balancing will
-  // have very little effects if more instances of the server are brought up
-  // by the deployment orchestration tool.
-  // As for a good number, it depends on the application traffic.
-  // The current value is random power of 2 which we liked
-  server.maxRequestsPerSocket = 100;
-  server.keepAliveTimeout = 10_000; // millis
-}
-
-function globalErrorHandler(server: Server, reason: 'exception' | 'rejection') {
+function globalErrorHandler(
+  server: HttpServer,
+  reason: 'exception' | 'rejection'
+) {
   return (err: unknown) => {
-    console.error(`Unhandled ${reason}. This may help:\n ${inspect(err)}`);
+    console.error(err, `Unhandled ${reason}`);
 
     server.close();
 

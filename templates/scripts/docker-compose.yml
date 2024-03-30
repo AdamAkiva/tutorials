@@ -84,6 +84,7 @@ services:
       - SERVER_URL=http://localhost
       - API_ROUTE=v0/api
       - HEALTH_CHECK_ROUTE=health
+      - ALLOWED_HOSTS=localhost
       # Depends on whose the client (browser) your application has. Either match
       # it to the frontend application you have, or remove it if it is only
       # accessed by server(s)
@@ -96,6 +97,10 @@ services:
     volumes:
       - ../be:/home/node/node-template:rw
     stop_grace_period: 2s
+    # tty enables better log format for npm and debug. Using it in development
+    # is not an issue, however, don't enable it production since there's no need
+    tty: true
+    stdin_open: true
     ports:
       - "9865:9865"
       - "9229:9229"
@@ -140,6 +145,10 @@ services:
     volumes:
       - ../fe:/home/node/node-template:rw
     stop_grace_period: 2s
+    # tty enables better log format for npm and debug. Using it in development
+    # is not an issue, however, don't enable it production since there's no need
+    tty: true
+    stdin_open: true
     ports:
       - "9866:9866"
     healthcheck:
