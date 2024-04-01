@@ -15,6 +15,9 @@ services:
   #     - MONGO_DB_NAME=node-template-dev
   #   volumes:
   #     - ../db-dev-data:/data/db:rw
+  #   # See: https://stackoverflow.com/a/44440563
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
   #   stop_grace_period: 2s
   #   healthcheck:
   #     test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/node-template-dev --quiet
@@ -38,7 +41,11 @@ services:
       - POSTGRES_DB=node-template-dev
     volumes:
       - ../db-dev-data:/var/lib/postgresql/data:rw
-      - /etc/passwd:/etc/passwd:ro # See: https://github.com/docker-library/docs/blob/master/postgres/README.md#arbitrary---user-notes
+      # See: https://github.com/docker-library/docs/blob/master/postgres/README.md#arbitrary---user-notes
+      - /etc/passwd:/etc/passwd:ro
+      # See: https://stackoverflow.com/a/44440563
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     stop_grace_period: 2s
     healthcheck:
       test: pg_isready -p 5432 -U admin -d node-template-dev
@@ -57,6 +64,11 @@ services:
   #   image: redis:alpine
   #   # Redis most likely will be used as cache, if you want to make it consistent
   #   # in addition to in-memory cache, don't forget to add a volume
+  #   volumes:
+  #     - ../db-dev-data:/data/db:rw
+  #   # See: https://stackoverflow.com/a/44440563
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
   #   stop_grace_period: 2s
   #   healthcheck:
   #     test: redis-cli -p 6379 ping | grep PONG
@@ -96,6 +108,13 @@ services:
       - NODE_ENV=development
     volumes:
       - ../be:/home/node/node-template:rw
+      # Volume npm cache to speed up the npm install. This should allow cache reuse
+      # whenever node_modules are removed.
+      # See: https://docs.npmjs.com/cli/v6/using-npm/config#cache for reference
+      - ./cache/be:/home/node/.npm:rw
+      # See: https://stackoverflow.com/a/44440563
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     stop_grace_period: 2s
     # tty enables better log format for npm and debug. Using it in development
     # is not an issue, however, don't enable it production since there's no need
@@ -144,6 +163,13 @@ services:
       - NODE_ENV=development
     volumes:
       - ../fe:/home/node/node-template:rw
+      # Volume npm cache to speed up the npm install. This should allow cache reuse
+      # whenever node_modules are removed.
+      # See: https://docs.npmjs.com/cli/v6/using-npm/config#cache for reference
+      - ./cache/fe:/home/node/.npm:rw
+      # See: https://stackoverflow.com/a/44440563
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     stop_grace_period: 2s
     # tty enables better log format for npm and debug. Using it in development
     # is not an issue, however, don't enable it production since there's no need
