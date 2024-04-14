@@ -150,7 +150,11 @@ export default tslint.config({
     ],
     '@typescript-eslint/consistent-type-imports': [
       2,
-      { prefer: 'type-imports', fixStyle: 'inline-type-imports' }
+      {
+        prefer: 'type-imports',
+        fixStyle: 'inline-type-imports',
+        disallowTypeAnnotations: false
+      }
     ],
     '@typescript-eslint/explicit-member-accessibility': [
       2,
