@@ -1,10 +1,10 @@
-import {
-  type Application,
-  type Response as ExpressResponse,
-  type NextFunction,
-  type Request
+import type {
+  Application,
+  Response as ExpressResponse,
+  NextFunction,
+  Request
 } from 'express';
-import { type Server } from 'node:http';
+import type { Server } from 'node:http';
 
 import type Logger from '../logger.js';
 
