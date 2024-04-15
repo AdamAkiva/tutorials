@@ -36,7 +36,7 @@ https://docs.docker.com/desktop/install/linux-install/
 5. In order to support old format of docker-compose in addition to docker compose,
    run the following command (Feel free to skip this if you don't want to support the old format):
    ```bash
-   sudo echo 'docker compose "$@"' > /bin/docker-compose && sudo chmod +x /bin/docker-compose
+   echo 'docker-compose "$@"' > ~/docker-compose && sudo mv ~/docker-compose /usr/bin && sudo chmod +x /usr/bin/docker-compose
    ```
 6. In order to run docker as **non-root** user:  
    https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user
