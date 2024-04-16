@@ -84,11 +84,11 @@ export default class Logger {
     this._handler = this._logMiddleware.logger;
   }
 
-  public get logMiddleware() {
-    return this._logMiddleware;
+  public getHandler() {
+    return this._handler;
   }
 
-  public get handler() {
-    return this._handler;
+  public getLogMiddleware() {
+    return this._logMiddleware;
   }
 }

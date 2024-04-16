@@ -1,14 +1,12 @@
 import { createServer } from 'node:http';
 import { resolve } from 'node:path';
-import { inspect } from 'node:util';
 
 import compress from 'compression';
 import cors from 'cors';
-import Debug from 'debug';
 import express from 'express';
 
 import { getEnv } from './config.js';
-import { ERR_CODES, StatusCodes } from './constants.js';
+import { ERR_CODES, StatusCodes, generalDebug } from './constants.js';
 import NodeTemplateError from './error.js';
 import {
   debugEnabled,
@@ -24,7 +22,9 @@ import Logger from './logger.js';
 import type {
   AddOptional,
   AddRequired,
+  AddressInfo,
   Application,
+  CorsOptions,
   EnvironmentVariables,
   MaybeArray,
   Mode,
@@ -39,10 +39,6 @@ import type {
 
 /**********************************************************************************/
 
-export const generalDebug = Debug('nodeTemplate:general');
-
-/**********************************************************************************/
-
 export {
   ERR_CODES,
   Logger,
@@ -54,8 +50,8 @@ export {
   debugEnabled,
   express,
   filterNullAndUndefined,
+  generalDebug,
   getEnv,
-  inspect,
   isDevelopmentMode,
   isProductionMode,
   isTestMode,
@@ -64,7 +60,9 @@ export {
   strcasecmp,
   type AddOptional,
   type AddRequired,
+  type AddressInfo,
   type Application,
+  type CorsOptions,
   type EnvironmentVariables,
   type MaybeArray,
   type Mode,

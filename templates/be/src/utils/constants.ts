@@ -1,3 +1,9 @@
+import Debug from 'debug';
+
+/**********************************************************************************/
+
+export const generalDebug = Debug('node-template:general');
+
 export enum StatusCodes {
   SUCCESS = 200,
   CREATED = 201,

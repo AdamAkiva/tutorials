@@ -1,7 +1,5 @@
 #!/bin/sh
 
-####################################################################################
-
 UID=$(id -u);
 GID=$(id -g);
 
@@ -14,6 +12,8 @@ BE_MODULES_FOLDER="$BE_DIR"/node_modules;
 
 FE_DIR="$PROJ_ROOT_DIR"/fe;
 FE_MODULES_FOLDER="$FE_DIR"/node_modules;
+
+UV_THREADPOOL_SIZE=$(($(nproc --all) - 1));
 
 ####################################################################################
 
@@ -33,7 +33,7 @@ check_prerequisites() {
 }
 
 remove() {
-    if ! UID="$UID" GID="$GID" docker compose down; then
+    if ! UID="$UID" GID="$GID" UV_THREADPOOL_SIZE="$UV_THREADPOOL_SIZE" docker compose down; then
         printf "\nDocker removal failed, solve the error/s and try again\n\n";
         exit 1;
     fi

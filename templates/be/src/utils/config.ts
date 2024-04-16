@@ -16,15 +16,15 @@ export function getEnv(): EnvironmentVariables {
     mode: mode,
     server: {
       port: process.env.SERVER_PORT!,
-      url: process.env.SERVER_URL!,
-      apiRoute: process.env.API_ROUTE!,
+      baseUrl: process.env.SERVER_BASE_URL!,
+      httpRoute: process.env.HTTP_ROUTE!,
       healthCheck: {
         route: process.env.HEALTH_CHECK_ROUTE!,
         allowedHosts: new Set(process.env.ALLOWED_HOSTS!.split(','))
       },
       allowedOrigins: new Set(process.env.ALLOWED_ORIGINS!.split(','))
     }
-  };
+  } as const;
 }
 
 function checkRuntimeEnv(mode?: string) {
@@ -48,7 +48,7 @@ function checkEnvVariables(mode: Mode) {
     }
   });
   if (missingValues) {
-    console.error(`\nMissing the following env vars: ${missingValues}`);
+    console.error(`\nMissing the following env vars:\n${missingValues}`);
 
     process.exit(ERR_CODES.EXIT_NO_RESTART);
   }
@@ -57,8 +57,8 @@ function checkEnvVariables(mode: Mode) {
 function checkMissingEnvVariables(mode: Mode) {
   const envVars = [
     'SERVER_PORT',
-    'SERVER_URL',
-    'API_ROUTE',
+    'SERVER_BASE_URL',
+    'HTTP_ROUTE',
     'HEALTH_CHECK_ROUTE',
     'ALLOWED_HOSTS',
     'ALLOWED_ORIGINS'

@@ -13,10 +13,18 @@ import { EventEmitter } from 'node:events';
 // See: https://nodejs.org/api/events.html#capture-rejections-of-promises
 EventEmitter.captureRejections = true;
 
+// The default stack trace limit is 10 calls. Increasing it to a number which
+// we'll never have to think about it again
+Error.stackTraceLimit = 256;
+
 /**********************************************************************************/
 
 import { HttpServer } from './server/index.js';
-import { Logger, generalDebug, getEnv } from './utils/index.js';
+import { Logger, generalDebug, getEnv, type Mode } from './utils/index.js';
+
+/**********************************************************************************/
+
+await startServer();
 
 /**********************************************************************************/
 
@@ -25,17 +33,70 @@ async function startServer() {
 
   const { mode, server: serverEnv } = getEnv();
 
-  const logger = new Logger();
-  const { handler: loggerHandler, logMiddleware } = logger;
+  const { handler: logger, middleware: logMiddleware } = createLogger();
 
-  const server = new HttpServer(mode, loggerHandler);
+  const server = await createHttpServer({
+    mode: mode,
+    allowedOrigins: serverEnv.allowedOrigins,
+    routes: {
+      http: `/${serverEnv.httpRoute}`,
+      health: `/${serverEnv.healthCheck.route}`
+    },
+    logger: { handler: logger, middleware: logMiddleware },
+    allowedHosts: serverEnv.healthCheck.allowedHosts
+  });
+
+  attachProcessHandlers(server, logger);
+
+  await server.listen(serverEnv.port, () => {
+    logger.info(
+      `Server is running in '${mode}' mode on:` +
+        ` ${serverEnv.baseUrl}:${serverEnv.port}/${serverEnv.httpRoute}`
+    );
+
+    generalDebug('Application is ready');
+  });
+}
+
+/**********************************************************************************/
+
+function createLogger() {
+  const logger = new Logger();
+
+  return {
+    handler: logger.getHandler(),
+    middleware: logger.getLogMiddleware()
+  };
+}
+
+async function createHttpServer(params: {
+  mode: Mode;
+  allowedOrigins: Set<string>;
+  routes: { http: string; health: string };
+  logger: { handler: Logger['_handler']; middleware: Logger['_logMiddleware'] };
+  allowedHosts: Set<string>;
+}) {
+  const {
+    mode,
+    allowedOrigins,
+    routes,
+    allowedHosts,
+    logger: { handler: loggerHandler, middleware: logMiddleware }
+  } = params;
+
+  const server = new HttpServer({
+    mode: mode,
+    allowedOrigins: allowedOrigins,
+    routes: routes,
+    logger: loggerHandler
+  });
 
   // The order matters!
   // These calls setup express middleware, and the configuration middleware
   // must be used BEFORE the routes
-  await server.attachConfigurationMiddlewares(serverEnv.allowedOrigins);
+  await server.attachConfigurationMiddlewares();
   server.attachRoutesMiddlewares({
-    allowedHosts: serverEnv.healthCheck.allowedHosts,
+    allowedHosts: allowedHosts,
     // The reason for it being a callback it the ability to unit test it
     readyCheck: async () => {
       let notReadyMsg = '';
@@ -49,21 +110,15 @@ async function startServer() {
 
       return notReadyMsg;
     },
-    logMiddleware: logMiddleware,
-    routes: {
-      api: `/${serverEnv.apiRoute}`,
-      health: `/${serverEnv.healthCheck.route}`
-    }
+    logMiddleware: logMiddleware
   });
 
-  // Attaching the event handlers after the server initialization for two reasons.
-  // Firstly, if an error occurred before this part, it is 98.7% a developer
-  // mistake with the initialization of the server
-  // Secondly, this is the first point where there are resources to cleanup
-  // if something failed (partially true since the database is ready before
-  // the server, but again, that goes more into the first point)
+  return server;
+}
+
+function attachProcessHandlers(server: HttpServer, logger: Logger['_handler']) {
   process
-    .on('warning', loggerHandler.warn)
+    .on('warning', logger.warn)
     .once('SIGINT', () => {
       server.close();
     })
@@ -73,24 +128,33 @@ async function startServer() {
     .once('SIGTERM', () => {
       server.close();
     })
-    .once('unhandledRejection', globalErrorHandler(server, 'rejection'))
-    .once('uncaughtException', globalErrorHandler(server, 'exception'));
-
-  server.listen(serverEnv.port, () => {
-    loggerHandler.info(
-      `Server is running in '${mode}' mode on:` +
-        ` ${serverEnv.url}:${serverEnv.port}/${serverEnv.apiRoute}`
+    .once(
+      'unhandledRejection',
+      globalErrorHandler({
+        server: server,
+        reason: 'rejection',
+        logger: logger
+      })
+    )
+    .once(
+      'uncaughtException',
+      globalErrorHandler({
+        server: server,
+        reason: 'exception',
+        logger: logger
+      })
     );
-    generalDebug('Application is ready');
-  });
 }
 
-function globalErrorHandler(
-  server: HttpServer,
-  reason: 'exception' | 'rejection'
-) {
+function globalErrorHandler(params: {
+  server: HttpServer;
+  reason: 'exception' | 'rejection';
+  logger: Logger['_handler'];
+}) {
+  const { server, reason, logger } = params;
+
   return (err: unknown) => {
-    console.error(err, `Unhandled ${reason}`);
+    logger.fatal(err, `Unhandled ${reason}`);
 
     server.close();
 
@@ -98,7 +162,3 @@ function globalErrorHandler(
     process.exit(1);
   };
 }
-
-/**********************************************************************************/
-
-await startServer();

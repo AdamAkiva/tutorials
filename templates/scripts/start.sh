@@ -1,7 +1,5 @@
 #!/bin/sh
 
-####################################################################################
-
 UID=$(id -u);
 GID=$(id -g);
 
@@ -14,6 +12,8 @@ BE_DIR="$PROJ_ROOT_DIR"/be;
 NPM_BE_CACHE_FOLDER="cache/be";
 NPM_FE_CACHE_FOLDER="cache/fe";
 ERR_LOG_FILE=compose_err_logs.txt;
+
+UV_THREADPOOL_SIZE=$(($(nproc --all) - 1));
 
 ####################################################################################
 
@@ -44,13 +44,13 @@ start() {
     printf "Do you wish to recreate the images? (y/n) ";
     read -r opn;
     if [ "${opn:-n}" = "y" ]; then
-        if ! UID="$UID" GID="$GID" docker compose build; then
+        if ! UID="$UID" GID="$GID" UV_THREADPOOL_SIZE="$UV_THREADPOOL_SIZE" docker compose build; then
             printf "\nDocker build failed. Solve the errors displayed above and try again\n";
             exit 1;
         fi
     fi
 
-    if ! UID="$UID" GID="$GID" docker compose up -d --wait; then
+    if ! UID="$UID" GID="$GID" UV_THREADPOOL_SIZE="$UV_THREADPOOL_SIZE" docker compose up -d --wait; then
         for service in $(UID="$UID" GID="$GID" docker compose config --services); do
             health_status=$(docker inspect --format '{{.State.Health.Status}}' "$service");
             if [ "$health_status" != "healthy" ]; then

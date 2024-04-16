@@ -93,8 +93,8 @@ services:
     environment:
       - SERVER_PORT=9865
       - SERVER_DEBUG_PORT=9229
-      - SERVER_URL=http://localhost
-      - API_ROUTE=v0/api
+      - SERVER_BASE_URL=http://localhost
+      - HTTP_ROUTE=v0/api
       - HEALTH_CHECK_ROUTE=health
       - ALLOWED_HOSTS=localhost
       # Depends on whose the client (browser) your application has. Either match
@@ -105,7 +105,10 @@ services:
       - DB_URI=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
       # - DB_URI=mongodb://admin:admin@node-template-mongo-dev:27017/node-template-dev?authSource=admin # Mongo
       # - CACHE_URI=redis://node-template-redis-dev:6379 # Redis
+
       - NODE_ENV=development
+      - NODE_NO_WARNINGS=0
+      - UV_THREADPOOL_SIZE=${UV_THREADPOOL_SIZE}
     volumes:
       - ../be:/home/node/node-template:rw
       # Volume npm cache to speed up the npm install. This should allow cache reuse
