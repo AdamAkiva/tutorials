@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "~20.12.7",
-    "@types/react": "~18.2.78",
+    "@types/react": "~18.2.79",
     "@types/react-dom": "~18.2.25",
     "@vitejs/plugin-react-swc": "~3.6.0",
     "depcheck": "~1.4.7",
@@ -37,7 +37,7 @@
     "npm-check-updates": "~16.14.18",
     "prettier": "~3.2.5",
     "typescript": "~5.4.5",
-    "typescript-eslint": "~7.6.0",
+    "typescript-eslint": "~7.7.0",
     "vite": "~5.2.8"
   },
   "author": "Adam Akiva",
