@@ -5,6 +5,5 @@
 # using tini. This will allow signals to be forwarded to the application as
 # expected
 
-npm install;
-npm run generate:openapi;
+npm install && npm run generate:openapi;
 exec env DEBUG=node-template:* ./node_modules/.bin/nodemon --config ./nodemon.json ./src/main.ts;

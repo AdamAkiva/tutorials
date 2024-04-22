@@ -23,7 +23,6 @@ services:
   #     interval: 3s
   #     timeout: 2s
   #     retries: 5
-  #   command: --port 27017
 
   node-template-pg-dev:
     hostname: node-template-pg-dev
@@ -50,7 +49,7 @@ services:
       interval: 3s
       timeout: 2s
       retries: 5
-    command: -p 5432
+    command: postgres -p 5432 -c log_statement=all
 
   # node-template-redis-dev:
   #   hostname: node-template-redis-dev
@@ -72,7 +71,6 @@ services:
   #     interval: 3s
   #     timeout: 2s
   #     retries: 5
-  #   command: redis-server --port 6379
 
   ##################################################################################
 
@@ -142,7 +140,6 @@ services:
         condition: service_healthy
     #   node-template-redis-dev:
     #     condition: service_healthy
-    command: ./entrypoint.sh
 
   node-template-fe-dev:
     hostname: node-template-fe-dev
@@ -185,4 +182,3 @@ services:
       timeout: 3s
       retries: 5
       start_period: 30s
-    command: ./entrypoint.sh
