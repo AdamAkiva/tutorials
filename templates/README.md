@@ -6,7 +6,7 @@
 3. Make sure the scripts have execute permissions, e.g:
 
 ```bash
-chmod +x ./scripts/start.sh ./scripts/remove.sh
+chmod +x ./scripts/start.sh ./scripts/remove.sh ./be/entrypoint.sh ./fe/entrypoint.sh
 ```
 
 ---

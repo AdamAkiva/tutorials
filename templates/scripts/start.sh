@@ -6,13 +6,14 @@ UID=$(id -u);
 GID=$(id -g);
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")");
-PROJ_ROOT_DIR=$(dirname "$SCRIPT_DIR");
-DB_DATA_FOLDER="$PROJ_ROOT_DIR"/db-dev-data;
+ROOT_DIR=$(dirname "$SCRIPT_DIR");
+DB_DATA_FOLDER="$ROOT_DIR"/db-dev-data;
 
-BE_DIR="$PROJ_ROOT_DIR"/be;
+BE_DIR="$ROOT_DIR"/be;
 
-NPM_BE_CACHE_FOLDER="cache/be";
-NPM_FE_CACHE_FOLDER="cache/fe";
+NPM_BE_CACHE_FOLDER="$ROOT_DIR"/npm-cache/be;
+NPM_FE_CACHE_FOLDER="$ROOT_DIR"/npm-cache/fe;
+
 ERR_LOG_FILE=compose_err_logs.txt;
 
 ####################################################################################
@@ -67,7 +68,7 @@ start() {
 
 ####################################################################################
 
-cd "$SCRIPT_DIR" || exit 1;
+cd "$ROOT_DIR" || exit 1;
 
 check_prerequisites;
 start;

@@ -6,13 +6,13 @@ UID=$(id -u);
 GID=$(id -g);
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")");
-PROJ_ROOT_DIR=$(dirname "$SCRIPT_DIR");
-DB_DATA_FOLDER="$PROJ_ROOT_DIR"/db-dev-data;
+ROOT_DIR=$(dirname "$SCRIPT_DIR");
+DB_DATA_FOLDER="$ROOT_DIR"/db-dev-data;
 
-BE_DIR="$PROJ_ROOT_DIR"/be;
+BE_DIR="$ROOT_DIR"/be;
 BE_MODULES_FOLDER="$BE_DIR"/node_modules;
 
-FE_DIR="$PROJ_ROOT_DIR"/fe;
+FE_DIR="$ROOT_DIR"/fe;
 FE_MODULES_FOLDER="$FE_DIR"/node_modules;
 
 ####################################################################################
@@ -63,7 +63,7 @@ remove_database() {
 
 ####################################################################################
 
-cd "$SCRIPT_DIR" || exit 1;
+cd "$ROOT_DIR" || exit 1;
 
 check_prerequisites;
 remove;

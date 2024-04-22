@@ -5,7 +5,10 @@ import {
   express,
   isDevelopmentMode,
   isProductionMode,
+  isTestMode,
   resolve,
+  type AddressInfo,
+  type CorsOptions,
   type Logger,
   type Mode,
   type NextFunction,
@@ -23,24 +26,41 @@ export default class HttpServer {
     import.meta.dirname,
     '../api-docs/openapi.html'
   );
-  private static readonly ALLOWED_METHODS = new Set<string>([
-    'HEAD',
-    'GET',
-    'POST',
-    'PATCH',
-    'DELETE',
-    'OPTIONS'
-  ] as const);
 
   private readonly _mode;
+
+  private readonly _allowedMethods;
+  private readonly _routes;
+
   private readonly _logger;
+
+  private readonly _corsOptions: CorsOptions;
 
   private readonly _app;
   private readonly _server;
 
-  public constructor(mode: Mode, logger: Logger['handler']) {
+  public constructor(params: {
+    mode: Mode;
+    allowedMethods: Set<string>;
+    allowedOrigins: Set<string>;
+    routes: { http: string; health: string };
+    logger: Logger['_handler'];
+  }) {
+    const { mode, allowedMethods, allowedOrigins, routes, logger } = params;
+
     this._mode = mode;
+    this._allowedMethods = allowedMethods;
+    this._routes = routes;
     this._logger = logger;
+    this._corsOptions = {
+      methods: Array.from(this._allowedMethods),
+      origin:
+        allowedOrigins.size === 1
+          ? Array.from(allowedOrigins)[0]
+          : Array.from(allowedOrigins),
+      maxAge: 60 * 60 * 24, // 1 day in seconds
+      optionsSuccessStatus: 200 // last option here: https://github.com/expressjs/cors?tab=readme-ov-file#configuration-options
+    };
 
     // Disable 'x-powered-by' should be pretty clear. Reason to disable etag
     // can be understood by this comprehensive answer: https://stackoverflow.com/a/67929691
@@ -51,29 +71,41 @@ export default class HttpServer {
     this._attachEventHandlers(this._logger);
   }
 
-  public listen(port: number | string, callback?: () => void) {
-    port = typeof port === 'string' ? Number(port) : port;
+  public async listen(port?: number | string) {
+    if (port) {
+      port = typeof port === 'string' ? Number(port) : port;
+    }
 
-    return this._server.listen(port, callback);
+    return await new Promise<number>((resolve) => {
+      this._server.once('listening', () => {
+        if (!isTestMode(this._mode)) {
+          // Can be asserted since this is not a unix socket and we are inside
+          // the listen event
+          const { address, port } = this._server.address() as AddressInfo;
+          const route = this._routes.http;
+
+          this._logger.info(
+            `Server is running in '${this._mode}' mode on: ` +
+              `'${address.endsWith(':') ? address : address.concat(':')}${port}${route}'`
+          );
+        }
+
+        resolve((this._server.address() as AddressInfo).port);
+      });
+
+      this._server.listen(port);
+    });
   }
 
   public close() {
     this._server.close();
   }
 
-  public async attachConfigurationMiddlewares(allowedOrigins: Set<string>) {
+  public async attachConfigurationMiddlewares() {
     this._app.use(
-      Middlewares.checkMethod(HttpServer.ALLOWED_METHODS),
+      Middlewares.checkMethod(this._allowedMethods),
       // Feel free to remove cors if the application has no frontend
-      cors({
-        methods: Array.from(HttpServer.ALLOWED_METHODS),
-        origin:
-          allowedOrigins.size === 1
-            ? Array.from(allowedOrigins)[0]
-            : Array.from(allowedOrigins),
-        maxAge: 86400, // 1 day in secs
-        optionsSuccessStatus: 200 // last option here: https://github.com/expressjs/cors?tab=readme-ov-file#configuration-options
-      }),
+      cors(this._corsOptions),
       compress()
     );
     if (isProductionMode(this._mode)) {
@@ -104,28 +136,23 @@ export default class HttpServer {
     allowedHosts: Set<string>;
     readyCheck: () => Promise<string> | string;
     logMiddleware: (req: Request, res: Response, next: NextFunction) => void;
-    routes: { api: string; health: string };
   }) {
-    const {
-      allowedHosts,
-      readyCheck,
-      logMiddleware,
-      routes: { api: apiRoute, health: healthCheckRoute }
-    } = params;
+    const { allowedHosts, readyCheck, logMiddleware } = params;
+    const { http: httpRoute, health: healthRoute } = this._routes;
 
     if (isDevelopmentMode(this._mode)) {
-      this._attachAPIDocs(apiRoute);
+      this._attachAPIDocs(httpRoute);
     }
 
     this._app
-      .get(healthCheckRoute, Middlewares.healthCheck(allowedHosts, readyCheck))
+      .get(healthRoute, Middlewares.healthCheck(allowedHosts, readyCheck))
       // The middlewares are executed in order (as set by express) and there's
       // no point to log every health check or every call to the api-docs
       // (development only), so the log middleware comes after the health
       // check route
       .use(logMiddleware)
       .use(
-        apiRoute,
+        httpRoute,
         Middlewares.attachContext(this._logger)
         // Add relevant router(s) here
       )
@@ -158,7 +185,7 @@ export default class HttpServer {
     this._server.keepAliveTimeout = 10_000; // millis
   }
 
-  private _attachEventHandlers(logger: Logger['handler']) {
+  private _attachEventHandlers(logger: Logger['_handler']) {
     this._server.on('error', (err) => {
       logger.fatal(err, 'HTTP Server error');
 

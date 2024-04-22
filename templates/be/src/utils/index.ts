@@ -24,7 +24,9 @@ import Logger from './logger.js';
 import type {
   AddOptional,
   AddRequired,
+  AddressInfo,
   Application,
+  CorsOptions,
   EnvironmentVariables,
   MaybeArray,
   Mode,
@@ -39,7 +41,7 @@ import type {
 
 /**********************************************************************************/
 
-export const generalDebug = Debug('nodeTemplate:general');
+export const generalDebug = Debug('node-template:general');
 
 /**********************************************************************************/
 
@@ -64,7 +66,9 @@ export {
   strcasecmp,
   type AddOptional,
   type AddRequired,
+  type AddressInfo,
   type Application,
+  type CorsOptions,
   type EnvironmentVariables,
   type MaybeArray,
   type Mode,

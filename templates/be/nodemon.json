@@ -1,10 +1,13 @@
 {
   "restartable": "rs",
+  "events": {
+    "start": "clear"
+  },
   "watch": ["./src"],
   "execMap": {
     "ts": "node --nolazy --enable-source-maps --trace-uncaught --trace-warnings --inspect=0.0.0.0:$SERVER_DEBUG_PORT --import ./loader.js"
   },
   "ext": "ts,json",
-  "signal": "SIGTERM",
+  "signal": "SIGINT,SIGTERM,SIGQUIT",
   "delay": "333ms"
 }

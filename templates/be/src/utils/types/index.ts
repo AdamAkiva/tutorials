@@ -1,10 +1,13 @@
-import {
-  type Application,
-  type Response as ExpressResponse,
-  type NextFunction,
-  type Request
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+
+import type { CorsOptions } from 'cors';
+import type {
+  Application,
+  Response as ExpressResponse,
+  NextFunction,
+  Request
 } from 'express';
-import { type Server } from 'node:http';
 
 import type Logger from '../logger.js';
 
@@ -30,7 +33,7 @@ export type Response = ExpressResponse<unknown, { ctx: RequestContext }>;
 export type RequestContext = {
   // TODO This should hold the res.locals.ctx objects which are the values related
   // to the context of a request (such as DatabaseHandler, logger, etc...)
-  logger: Logger['handler'];
+  logger: Logger['_handler'];
 };
 
 /**********************************************************************************/
@@ -40,8 +43,8 @@ export type EnvironmentVariables = {
   mode: Mode;
   server: {
     port: string;
-    url: string;
-    apiRoute: string;
+    baseUrl: string;
+    httpRoute: string;
     healthCheck: { route: string; allowedHosts: Set<string> };
     allowedOrigins: Set<string>;
   };
@@ -49,4 +52,11 @@ export type EnvironmentVariables = {
 
 /**********************************************************************************/
 
-export { type Application, type NextFunction, type Request, type Server };
+export {
+  type AddressInfo,
+  type Application,
+  type CorsOptions,
+  type NextFunction,
+  type Request,
+  type Server
+};

@@ -61,7 +61,7 @@ export function healthCheck(
   };
 }
 
-export function attachContext(logger: Logger['handler']) {
+export function attachContext(logger: Logger['_handler']) {
   return function _attachContext(
     _: Request,
     res: Response,
