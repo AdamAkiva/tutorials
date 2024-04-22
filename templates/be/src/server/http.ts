@@ -33,6 +33,8 @@ export default class HttpServer {
   private readonly _routes;
 
   private readonly _logger;
+  private readonly _routes;
+  private readonly _corsOptions: CorsOptions;
 
   private readonly _corsOptions: CorsOptions;
 
@@ -68,7 +70,7 @@ export default class HttpServer {
     this._server = createServer(this._app);
 
     this._attachConfigurations();
-    this._attachEventHandlers(this._logger);
+    this._attachEventHandlers();
   }
 
   public async listen(port?: number | string) {
@@ -126,7 +128,8 @@ export default class HttpServer {
           xDownloadOptions: true,
           xFrameOptions: { action: 'deny' },
           xPermittedCrossDomainPolicies: { permittedPolicies: 'none' },
-          xXssProtection: true
+          xXssProtection: true,
+          xPoweredBy: false
         })
       );
     }
@@ -168,26 +171,25 @@ export default class HttpServer {
     // request (in this case). In short, the socket options refer to a "standard"
     // connection from a client
     this._server.maxHeadersCount = 50;
-    this._server.headersTimeout = 20_000; // millis
-    this._server.requestTimeout = 20_000; // millis
+    this._server.headersTimeout = 1e3 * 20; // millis
+    this._server.requestTimeout = 1e3 * 20; // millis
     // Connection close will terminate the tcp socket once the payload was
     // transferred and acknowledged. This setting is for the rare cases where,
     // for some reason, the tcp socket is left alive
-    this._server.timeout = 600_000; // millis
+    this._server.timeout = 1e5 * 6; // millis
     // See: https://github.com/nodejs/node/issues/40071
     // Leaving this without any limit will cause the server to reuse the
     // connection indefinitely (in theory). As a result, load balancing will
     // have very little effects if more instances of the server are brought up
     // by the deployment orchestration tool.
-    // As for a good number, it depends on the application traffic.
-    // The current value is random power of 2 which we liked
+    // As for a good number, it depends on the application traffic
     this._server.maxRequestsPerSocket = 100;
-    this._server.keepAliveTimeout = 10_000; // millis
+    this._server.keepAliveTimeout = 1e4; // millis
   }
 
   private _attachEventHandlers(logger: Logger['_handler']) {
     this._server.on('error', (err) => {
-      logger.fatal(err, 'HTTP Server error');
+      this._logger.fatal(err, 'HTTP Server error');
 
       // If an event emitter error happened, we shutdown the application.
       // As a result we allow the deployment orchestration tool to attempt to

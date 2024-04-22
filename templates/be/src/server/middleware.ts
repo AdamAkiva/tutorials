@@ -11,11 +11,11 @@ import {
 /**********************************************************************************/
 
 export function checkMethod(allowedMethods: Set<string>) {
-  return function _checkMethod(
+  return (
     req: Request,
     res: Response,
     next: NextFunction
-  ) {
+  ) => {
     const reqMethod = req.method.toUpperCase();
 
     if (!allowedMethods.has(reqMethod)) {
@@ -35,7 +35,7 @@ export function healthCheck(
   allowedHosts: Set<string>,
   isReadyCallback: () => Promise<string> | string
 ) {
-  return async function _healthCheck(req: Request, res: Response) {
+  return async (req: Request, res: Response) => {
     if (strcasecmp(req.method, 'HEAD') && strcasecmp(req.method, 'GET')) {
       return res
         .status(StatusCodes.BAD_REQUEST)
@@ -66,7 +66,7 @@ export function attachContext(logger: Logger['_handler']) {
     _: Request,
     res: Response,
     next: NextFunction
-  ) {
+  ) => {
     res.locals.ctx = {
       // Add additional context relevant fields
       logger: logger
@@ -112,13 +112,9 @@ export function errorHandler(
 function handleUnexpectedError(err: unknown, res: Response) {
   const logger = res.locals.ctx.logger;
   if (err instanceof Error) {
-    logger.fatal(err, 'Unhandled exception.\nThis may help:');
+    logger.fatal(err, 'Unhandled exception');
   } else {
-    logger.fatal(
-      err,
-      'Caught a non-error object.\nThis should never happen.\nThis may help ' +
-        'as well:'
-    );
+    logger.fatal(err, 'Caught a non-error object.\nThis should never happen');
   }
 
   return res

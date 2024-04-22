@@ -13,6 +13,10 @@ import { EventEmitter } from 'node:events';
 // See: https://nodejs.org/api/events.html#capture-rejections-of-promises
 EventEmitter.captureRejections = true;
 
+// The default stack trace limit is 10 calls. Increasing it to a number which
+// we'll never have to think about it again
+Error.stackTraceLimit = 256;
+
 /**********************************************************************************/
 
 import { createHttpServer, createLogger } from './init.js';

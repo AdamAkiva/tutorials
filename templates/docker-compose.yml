@@ -102,7 +102,10 @@ services:
       - DB_URI=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
       # - DB_URI=mongodb://admin:admin@node-template-mongo-dev:27017/node-template-dev?authSource=admin # Mongo
       # - CACHE_URI=redis://node-template-redis-dev:6379 # Redis
+
       - NODE_ENV=development
+      - NODE_NO_WARNINGS=0
+      - UV_THREADPOOL_SIZE=${UV_THREADPOOL_SIZE}
     volumes:
       - ./be:/home/node/node-template:rw
       # Volume npm cache to speed up the npm install. This should allow cache reuse

@@ -1,14 +1,12 @@
 import { createServer } from 'node:http';
 import { resolve } from 'node:path';
-import { inspect } from 'node:util';
 
 import compress from 'compression';
 import cors from 'cors';
-import Debug from 'debug';
 import express from 'express';
 
 import { getEnv } from './config.js';
-import { ERR_CODES, StatusCodes } from './constants.js';
+import { ERR_CODES, StatusCodes, generalDebug } from './constants.js';
 import NodeTemplateError from './error.js';
 import {
   debugEnabled,
@@ -56,8 +54,8 @@ export {
   debugEnabled,
   express,
   filterNullAndUndefined,
+  generalDebug,
   getEnv,
-  inspect,
   isDevelopmentMode,
   isProductionMode,
   isTestMode,

@@ -16,8 +16,8 @@ export default tslint.config({
   files: ['src/**/*.ts'],
   languageOptions: {
     globals: {
-      ...globals.builtin ,
-      ...globals.node
+      ...globals.builtin,
+      ...globals.browser
     },
     ecmaVersion: 'latest',
     sourceType: 'module',
@@ -280,6 +280,6 @@ export default tslint.config({
     '@security/detect-object-injection': 0,
     '@security/detect-possible-timing-attacks': 2,
     '@security/detect-pseudoRandomBytes': 2,
-    '@security/detect-unsafe-regex': 2,
+    '@security/detect-unsafe-regex': 2
   }
 });
