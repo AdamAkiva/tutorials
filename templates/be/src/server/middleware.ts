@@ -11,11 +11,7 @@ import {
 /**********************************************************************************/
 
 export function checkMethod(allowedMethods: Set<string>) {
-  return (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const reqMethod = req.method.toUpperCase();
 
     if (!allowedMethods.has(reqMethod)) {
@@ -62,11 +58,7 @@ export function healthCheck(
 }
 
 export function attachContext(logger: Logger['_handler']) {
-  return function _attachContext(
-    _: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
+  return (_: Request, res: Response, next: NextFunction) => {
     res.locals.ctx = {
       // Add additional context relevant fields
       logger: logger

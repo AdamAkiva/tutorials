@@ -17,7 +17,7 @@ export default tslint.config({
   languageOptions: {
     globals: {
       ...globals.builtin,
-      ...globals.browser
+      ...globals.node
     },
     ecmaVersion: 'latest',
     sourceType: 'module',

@@ -33,8 +33,6 @@ export default class HttpServer {
   private readonly _routes;
 
   private readonly _logger;
-  private readonly _routes;
-  private readonly _corsOptions: CorsOptions;
 
   private readonly _corsOptions: CorsOptions;
 
@@ -187,7 +185,7 @@ export default class HttpServer {
     this._server.keepAliveTimeout = 1e4; // millis
   }
 
-  private _attachEventHandlers(logger: Logger['_handler']) {
+  private _attachEventHandlers() {
     this._server.on('error', (err) => {
       this._logger.fatal(err, 'HTTP Server error');
 
