@@ -23,7 +23,7 @@ export default tslint.config({
     sourceType: 'module',
     parser: tslint.parser,
     parserOptions: {
-      project: true
+      project: './tsconfig.lint.json'
     }
   },
   linterOptions: {

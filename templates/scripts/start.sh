@@ -5,7 +5,8 @@ GID=$(id -g);
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")");
 ROOT_DIR=$(dirname "$SCRIPT_DIR");
-DB_DATA_FOLDER="$ROOT_DIR"/db-dev-data;
+# Change the path according to your database(s) choice(s)
+DB_DATA_FOLDER="$ROOT_DIR"/dev-data/pg;
 
 BE_DIR="$ROOT_DIR"/be;
 
@@ -40,7 +41,7 @@ start() {
     # file(s) take on the permission of the root folder, hence the current user
     mkdir -p "$DB_DATA_FOLDER" "$NPM_BE_CACHE_FOLDER" "$NPM_FE_CACHE_FOLDER";
 
-    printf "Building Application...\n\n";
+    printf "Building Node Template...\n\n";
 
     printf "Do you wish to recreate the images? (y/n) ";
     read -r opn;
@@ -73,4 +74,4 @@ cd "$ROOT_DIR" || exit 1;
 check_prerequisites;
 start;
 
-printf "\nApplication is running\n\n";
+printf "\nNode Template is running\n\n";

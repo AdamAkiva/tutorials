@@ -1,21 +1,21 @@
 export default class NodeTemplateError extends Error {
-  private readonly _msg;
-  private readonly _code;
+  readonly #msg;
+  readonly #code;
 
   public constructor(msg: string, code: number) {
     super(msg);
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
 
-    this._msg = msg;
-    this._code = code;
+    this.#msg = msg;
+    this.#code = code;
   }
 
   public getMessage() {
-    return this._msg;
+    return this.#msg;
   }
 
   public getCode() {
-    return this._code;
+    return this.#code;
   }
 }

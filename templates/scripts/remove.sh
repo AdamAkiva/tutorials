@@ -5,7 +5,7 @@ GID=$(id -g);
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")");
 ROOT_DIR=$(dirname "$SCRIPT_DIR");
-DB_DATA_FOLDER="$ROOT_DIR"/db-dev-data;
+DB_DATA_FOLDER="$ROOT_DIR"/dev-data;
 
 BE_DIR="$ROOT_DIR"/be;
 BE_MODULES_FOLDER="$BE_DIR"/node_modules;
@@ -71,4 +71,4 @@ remove;
 remove_node_modules;
 remove_database;
 
-printf '\nRemoved Application\n\n';
+printf '\nRemoved Node Template\n\n';

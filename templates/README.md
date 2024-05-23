@@ -6,7 +6,7 @@
 3. Make sure the scripts have execute permissions, e.g:
 
 ```bash
-chmod +x ./scripts/start.sh ./scripts/remove.sh ./be/entrypoint.sh ./fe/entrypoint.sh
+chmod +x ./scripts/*
 ```
 
 ---
@@ -50,7 +50,7 @@ If you have permission errors when running the postgres image, try the following
    (`sudo service postgresql stop`). If you want to make it permanent,
    [see this answer](https://askubuntu.com/a/19324)
 2. Stop the docker using: `yes | ./scripts/remove.sh`
-3. Remove the following folders: `rm -rf ./db-dev-data ./be/node_modules ./fe/node_modules ./scripts/cache`
+3. Remove the following folders: `rm -rf ./dev-data ./be/node_modules ./fe/node_modules ./scripts/cache`
 4. Make sure you have the latest docker and docker-compose versions
    (follow step 2 in the prerequisites)
 5. Run `yes | ./scripts/start.sh` and hope for the best

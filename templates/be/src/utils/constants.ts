@@ -6,6 +6,12 @@ export const generalDebug = Debug('node-template:general');
 
 /**********************************************************************************/
 
+export const VALIDATION = {
+  // Populate this with validation limits, such as length/regex limits
+} as const;
+
+/**********************************************************************************/
+
 export enum StatusCodes {
   SUCCESS = 200,
   CREATED = 201,
@@ -31,5 +37,6 @@ export const ERR_CODES = {
   // Indicator to the deployment orchestration service to not attempt to restart
   // the service, since the error is a result of a programmer error, and therefore
   // the application should not restart by default
+  EXIT_RESTART: 1,
   EXIT_NO_RESTART: 180
 } as const;

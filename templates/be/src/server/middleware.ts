@@ -2,16 +2,17 @@ import {
   NodeTemplateError,
   StatusCodes,
   strcasecmp,
-  type Logger,
   type NextFunction,
   type Request,
-  type Response
+  type RequestContext,
+  type ResponseWithCtx,
+  type ResponseWithoutCtx
 } from '../utils/index.js';
 
 /**********************************************************************************/
 
 export function checkMethod(allowedMethods: Set<string>) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: ResponseWithoutCtx, next: NextFunction) => {
     const reqMethod = req.method.toUpperCase();
 
     if (!allowedMethods.has(reqMethod)) {
@@ -20,7 +21,7 @@ export function checkMethod(allowedMethods: Set<string>) {
       return res
         .set('Allow', Array.from(allowedMethods).join(', '))
         .status(StatusCodes.NOT_ALLOWED)
-        .json(`${reqMethod} is not a support method`);
+        .json(`${reqMethod} is not a supported method`);
     }
 
     return next();
@@ -29,9 +30,9 @@ export function checkMethod(allowedMethods: Set<string>) {
 
 export function healthCheck(
   allowedHosts: Set<string>,
-  isReadyCallback: () => Promise<string> | string
+  isReadyCallback: () => Promise<string>
 ) {
-  return async (req: Request, res: Response) => {
+  return async (req: Request, res: ResponseWithoutCtx) => {
     if (strcasecmp(req.method, 'HEAD') && strcasecmp(req.method, 'GET')) {
       return res
         .status(StatusCodes.BAD_REQUEST)
@@ -57,40 +58,36 @@ export function healthCheck(
   };
 }
 
-export function attachContext(logger: Logger['_handler']) {
-  return (_: Request, res: Response, next: NextFunction) => {
-    res.locals.ctx = {
-      // Add additional context relevant fields
-      logger: logger
-    };
+export function attachContext(requestContext: RequestContext) {
+  return (_: Request, res: ResponseWithCtx, next: NextFunction) => {
+    res.locals.ctx = requestContext;
 
     return next();
   };
 }
 
-export function handleMissedRoutes(req: Request, res: Response) {
+export function handleMissedRoutes(req: Request, res: ResponseWithoutCtx) {
   return res.status(StatusCodes.NOT_FOUND).json(`'${req.url}' does not exist`);
 }
 
 // eslint-disable-next-line @typescript-eslint/max-params
 export function errorHandler(
-  err: Error,
+  err: unknown,
   _: Request,
-  res: Response,
+  res: ResponseWithCtx,
   next: NextFunction
 ) {
   if (res.headersSent) {
     return next(err);
   }
-  res.err = err; // Needed in order to display the correct stack trace in the logs
 
   // The order is based on two things, type fallback and the chances of each error
-  // happening. For example, Dashboard error should be the most common error reason,
-  // and it should be the first from that perspective
+  // happening. For example, NodeTemplate error should be the most common error
+  // reason, and it should be the first from that perspective
   if (err instanceof NodeTemplateError) {
     return res.status(err.getCode()).json(err.getMessage());
   }
-  if (!strcasecmp(err.name, 'PayloadTooLargeError')) {
+  if (err instanceof Error && !strcasecmp(err.name, 'PayloadTooLargeError')) {
     return res
       .status(StatusCodes.CONTENT_TOO_LARGE)
       .json('Request is too large');
@@ -101,7 +98,7 @@ export function errorHandler(
 
 /**********************************************************************************/
 
-function handleUnexpectedError(err: unknown, res: Response) {
+function handleUnexpectedError(err: unknown, res: ResponseWithCtx) {
   const logger = res.locals.ctx.logger;
   if (err instanceof Error) {
     logger.fatal(err, 'Unhandled exception');

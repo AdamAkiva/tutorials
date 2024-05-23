@@ -14,7 +14,7 @@ services:
   #     - MONGO_INITDB_ROOT_PASSWORD=admin
   #     - MONGO_DB_NAME=node-template-dev
   #   volumes:
-  #     - ./db-dev-data:/data/db:rw
+  #     - ./dev-data/mongo:/data/db:rw
   #   # See: https://stackoverflow.com/a/44440563
   #     - /etc/timezone:/etc/timezone:ro
   #     - /etc/localtime:/etc/localtime:ro
@@ -38,7 +38,7 @@ services:
       - POSTGRES_PASSWORD=admin
       - POSTGRES_DB=node-template-dev
     volumes:
-      - ./db-dev-data:/var/lib/postgresql/data:rw
+      - ./dev-data/pg:/var/lib/postgresql/data:rw
       # See: https://github.com/docker-library/docs/blob/master/postgres/README.md#arbitrary---user-notes
       - /etc/passwd:/etc/passwd:ro
       # See: https://stackoverflow.com/a/44440563
@@ -62,7 +62,7 @@ services:
   #   # Redis most likely will be used as cache, if you want to make it consistent
   #   # in addition to in-memory cache, don't forget to add a volume
   #   volumes:
-  #     - ./db-dev-data:/data/db:rw
+  #     - ./dev-data/redis:/data/db:rw
   #   # See: https://stackoverflow.com/a/44440563
   #     - /etc/timezone:/etc/timezone:ro
   #     - /etc/localtime:/etc/localtime:ro
@@ -81,7 +81,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-      target: be-dev
+      target: dev-be
       args:
         DOCKER_BUILDKIT: 1
     user: ${UID}:${GID}
@@ -97,9 +97,9 @@ services:
       # accessed by server(s)
       - ALLOWED_ORIGINS=*
       # Uncomment (and maybe change the name) the database(s) you chose
-      - DB_URI=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
-      # - DB_URI=mongodb://admin:admin@node-template-mongo-dev:27017/node-template-dev?authSource=admin # Mongo
-      # - CACHE_URI=redis://node-template-redis-dev:6379 # Redis
+      - DB_URL=postgres://admin:admin@node-template-pg-dev:5432/node-template-dev # Postgres
+      # - DB_URL=mongodb://admin:admin@node-template-mongo-dev:27017/node-template-dev?authSource=admin # Mongo
+      # - CACHE_URL=redis://node-template-redis-dev:6379 # Redis
 
       - NODE_ENV=development
       - NODE_NO_WARNINGS=0
@@ -148,7 +148,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-      target: fe-dev
+      target: dev-fe
       args:
         DOCKER_BUILDKIT: 1
     user: ${UID}:${GID}

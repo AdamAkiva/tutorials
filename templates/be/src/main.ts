@@ -7,7 +7,6 @@
  * initialization order, so we make sure it is the first thing that is being done
  * When the server runs
  */
-//
 import { EventEmitter } from 'node:events';
 
 // See: https://nodejs.org/api/events.html#capture-rejections-of-promises
@@ -19,9 +18,13 @@ Error.stackTraceLimit = 256;
 
 /**********************************************************************************/
 
-import { createHttpServer, createLogger } from './init.js';
-import type { HttpServer } from './server/index.js';
-import { generalDebug, getEnv, type Logger } from './utils/index.js';
+import { HttpServer } from './server/index.js';
+import {
+  ERR_CODES,
+  EnvironmentVariables,
+  Logger,
+  generalDebug
+} from './utils/index.js';
 
 /**********************************************************************************/
 
@@ -32,50 +35,59 @@ await startServer();
 async function startServer() {
   generalDebug('Application starting...');
 
-  const { mode, server: serverEnv } = getEnv();
+  const { mode, server: serverEnv } =
+    new EnvironmentVariables().getEnvVariables();
 
-  const { handler: logger, middleware: logMiddleware } = createLogger();
+  const { logger, logMiddleware } = createLogger();
 
-  const server = await createHttpServer({
+  const server = await HttpServer.create({
     mode: mode,
-    allowedOrigins: serverEnv.allowedOrigins,
-    routes: {
-      http: `/${serverEnv.httpRoute}`,
-      health: `/${serverEnv.healthCheck.route}`
-    },
     allowedMethods: new Set([
       'HEAD',
       'GET',
       'POST',
+      'PUT',
       'PATCH',
       'DELETE',
       'OPTIONS'
     ]),
+    allowedOrigins: serverEnv.allowedOrigins,
     allowedHosts: serverEnv.healthCheck.allowedHosts,
-    logger: { handler: logger, middleware: logMiddleware }
+    routes: {
+      http: `/${serverEnv.httpRoute}`,
+      health: `/${serverEnv.healthCheck.route}`
+    },
+    logger: logger,
+    logMiddleware: logMiddleware
   });
 
   await server.listen(serverEnv.port);
 
-  attachProcessHandlers(server, logger);
+  attachProcessEventHandlers(server, logger);
 
   generalDebug('Application is ready');
 }
 
 /**********************************************************************************/
 
-function attachProcessHandlers(server: HttpServer, logger: Logger['_handler']) {
+function createLogger() {
+  const logger = new Logger();
+
+  return {
+    logger: logger.getHandler(),
+    logMiddleware: logger.getLogMiddleware()
+  };
+}
+
+function attachProcessEventHandlers(
+  server: HttpServer,
+  logger: ReturnType<Logger['getHandler']>
+) {
   process
     .on('warning', logger.warn)
-    .once('SIGINT', () => {
-      server.close();
-    })
-    .once('SIGQUIT', () => {
-      server.close();
-    })
-    .once('SIGTERM', () => {
-      server.close();
-    })
+    .once('SIGINT', signalHandler(server))
+    .once('SIGQUIT', signalHandler(server))
+    .once('SIGTERM', signalHandler(server))
     .once(
       'unhandledRejection',
       globalErrorHandler({
@@ -94,10 +106,16 @@ function attachProcessHandlers(server: HttpServer, logger: Logger['_handler']) {
     );
 }
 
+function signalHandler(server: HttpServer) {
+  return () => {
+    server.close();
+  };
+}
+
 function globalErrorHandler(params: {
   server: HttpServer;
   reason: 'exception' | 'rejection';
-  logger: Logger['_handler'];
+  logger: ReturnType<Logger['getHandler']>;
 }) {
   const { server, reason, logger } = params;
 
@@ -107,6 +125,6 @@ function globalErrorHandler(params: {
     server.close();
 
     // See: https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html#error-exception-handling
-    process.exit(1);
+    process.exit(ERR_CODES.EXIT_RESTART);
   };
 }

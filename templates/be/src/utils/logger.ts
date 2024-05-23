@@ -1,4 +1,3 @@
-// This import is on purpose because it is the only place it is used
 import { pinoHttp } from 'pino-http';
 
 import { StatusCodes } from './constants.js';
@@ -7,11 +6,11 @@ import { isProductionMode, isTestMode } from './functions.js';
 /**********************************************************************************/
 
 export default class Logger {
-  private readonly _logMiddleware;
-  private readonly _handler;
+  readonly #logMiddleware;
+  readonly #handler;
 
   public constructor() {
-    this._logMiddleware = pinoHttp({
+    this.#logMiddleware = pinoHttp({
       level: isProductionMode(process.env.NODE_ENV) ? 'info' : 'trace',
 
       formatters: {
@@ -81,14 +80,14 @@ export default class Logger {
         responseTime: 'responseTime(MS)'
       }
     });
-    this._handler = this._logMiddleware.logger;
+    this.#handler = this.#logMiddleware.logger;
   }
 
   public getHandler() {
-    return this._handler;
+    return this.#handler;
   }
 
   public getLogMiddleware() {
-    return this._logMiddleware;
+    return this.#logMiddleware;
   }
 }

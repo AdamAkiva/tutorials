@@ -5,7 +5,7 @@ RUN apk update && apk add --no-cache curl && apk add --no-cache tini
 
 ################################ Development BE ####################################
 
-FROM dev-base as be-dev
+FROM dev-base as dev-be
 
 # Set the workdir
 WORKDIR /home/node/node-template
@@ -21,7 +21,7 @@ CMD ["/home/node/entrypoint.sh"]
 
 ################################ Development FE ####################################
 
-FROM dev-base as fe-dev
+FROM dev-base as dev-fe
 
 # Set the workdir
 WORKDIR /home/node/node-template

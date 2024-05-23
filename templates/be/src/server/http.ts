@@ -1,4 +1,5 @@
 import {
+  ERR_CODES,
   compress,
   cors,
   createServer,
@@ -9,11 +10,13 @@ import {
   resolve,
   type AddressInfo,
   type CorsOptions,
+  type Express,
   type Logger,
   type Mode,
   type NextFunction,
   type Request,
-  type Response
+  type ResponseWithoutCtx,
+  type Server
 } from '../utils/index.js';
 
 import * as Middlewares from './middleware.js';
@@ -21,54 +24,84 @@ import * as Middlewares from './middleware.js';
 /**********************************************************************************/
 
 export default class HttpServer {
-  // Allowed since v20.11.0: https://github.com/nodejs/node/pull/48740
-  private static readonly OPENAPI_FILE = resolve(
+  // Allowed in ESM since v20.11.0: https://github.com/nodejs/node/pull/48740
+  static readonly #OPENAPI_FILE = resolve(
     import.meta.dirname,
     '../api-docs/openapi.html'
   );
 
-  private readonly _mode;
+  readonly #mode;
 
-  private readonly _allowedMethods;
-  private readonly _routes;
+  readonly #server;
+  readonly #routes;
 
-  private readonly _logger;
+  readonly #requestContext;
 
-  private readonly _corsOptions: CorsOptions;
+  readonly #logger;
 
-  private readonly _app;
-  private readonly _server;
+  /********************************************************************************/
 
-  public constructor(params: {
+  public static async create(params: {
     mode: Mode;
     allowedMethods: Set<string>;
     allowedOrigins: Set<string>;
+    allowedHosts: Set<string>;
     routes: { http: string; health: string };
-    logger: Logger['_handler'];
+    logger: ReturnType<Logger['getHandler']>;
+    logMiddleware: (
+      req: Request,
+      res: ResponseWithoutCtx,
+      next: NextFunction
+    ) => void;
   }) {
-    const { mode, allowedMethods, allowedOrigins, routes, logger } = params;
+    const {
+      mode,
+      allowedMethods,
+      allowedOrigins,
+      allowedHosts,
+      routes,
+      logger,
+      logMiddleware
+    } = params;
 
-    this._mode = mode;
-    this._allowedMethods = allowedMethods;
-    this._routes = routes;
-    this._logger = logger;
-    this._corsOptions = {
-      methods: Array.from(this._allowedMethods),
+    // Remove CORS if this only a backend application
+    const corsOptions: CorsOptions = {
+      methods: Array.from(allowedMethods),
       origin:
         allowedOrigins.size === 1
           ? Array.from(allowedOrigins)[0]
           : Array.from(allowedOrigins),
-      maxAge: 60 * 60 * 24, // 1 day in seconds
+      maxAge: 86_400, // 1 day in seconds
       optionsSuccessStatus: 200 // last option here: https://github.com/expressjs/cors?tab=readme-ov-file#configuration-options
     };
 
-    // Disable 'x-powered-by' should be pretty clear. Reason to disable etag
+    // Disable 'x-powered-by' should be pretty clear. The Reason for disabling etag
     // can be understood by this comprehensive answer: https://stackoverflow.com/a/67929691
-    this._app = express().disable('etag').disable('x-powered-by');
-    this._server = createServer(this._app);
+    const app = express().disable('etag').disable('x-powered-by');
+    const server = createServer(app);
 
-    this._attachConfigurations();
-    this._attachEventHandlers();
+    const self = new HttpServer({
+      mode: mode,
+      server: server,
+      routes: routes,
+      logger: logger
+    });
+
+    // The order matters, don't change without understanding what you're doing
+    // first
+    await self.#attachConfigurationMiddlewares({
+      app: app,
+      allowedMethods: allowedMethods,
+      corsOptions: corsOptions
+    });
+    self.#attachRoutesMiddlewares({
+      app: app,
+      allowedHosts: allowedHosts,
+      logMiddleware: logMiddleware,
+      routes: { healthRoute: routes.health, httpRoute: routes.http }
+    });
+
+    return self;
   }
 
   public async listen(port?: number | string) {
@@ -77,39 +110,135 @@ export default class HttpServer {
     }
 
     return await new Promise<number>((resolve) => {
-      this._server.once('listening', () => {
-        if (!isTestMode(this._mode)) {
-          // Can be asserted since this is not a unix socket and we are inside
-          // the listen event
-          const { address, port } = this._server.address() as AddressInfo;
-          const route = this._routes.http;
+      this.#server.once('listening', () => {
+        // Can be asserted since this is not a unix socket and we are inside
+        // the listen event, see: https://nodejs.org/api/net.html#serveraddress
+        const { address, port } = this.#server.address() as AddressInfo;
 
-          this._logger.info(
-            `Server is running in '${this._mode}' mode on: ` +
+        if (!isTestMode(this.#mode)) {
+          const route = this.#routes.http;
+
+          this.#logger.info(
+            `Server is running in '${this.#mode}' mode on: ` +
               `'${address.endsWith(':') ? address : address.concat(':')}${port}${route}'`
           );
         }
 
-        resolve((this._server.address() as AddressInfo).port);
+        resolve(port);
       });
 
-      this._server.listen(port);
+      this.#server.listen(port);
     });
   }
 
   public close() {
-    this._server.close();
+    this.#server.close();
   }
 
-  public async attachConfigurationMiddlewares() {
-    this._app.use(
-      Middlewares.checkMethod(this._allowedMethods),
-      // Feel free to remove cors if the application has no frontend
-      cors(this._corsOptions),
+  /********************************************************************************/
+
+  // Prevent creating the class via the constructor because it needs to be an
+  // async creation
+  private constructor(params: {
+    mode: Mode;
+    server: Server;
+    routes: { http: string; health: string };
+    logger: ReturnType<Logger['getHandler']>;
+  }) {
+    const { mode, server, routes, logger } = params;
+
+    this.#mode = mode;
+    this.#server = server;
+    this.#routes = routes;
+    this.#logger = logger;
+
+    this.#requestContext = {
+      logger: logger
+    };
+
+    this.#attachServerConfigurations();
+    this.#attachServerEventHandlers();
+  }
+
+  #attachServerConfigurations() {
+    // Every configuration referring to sockets here, talks about network/tcp
+    // socket NOT websockets. Network socket is the underlying layer for http
+    // request (in this case). In short, the socket options refer to a "standard"
+    // connection from a client
+    this.#server.maxHeadersCount = 50;
+    this.#server.headersTimeout = 20_000; // millis
+    this.#server.requestTimeout = 20_000; // millis
+    // Connection close will terminate the tcp socket once the payload was
+    // transferred and acknowledged. This setting is for the rare cases where,
+    // for some reason, the tcp socket is left alive
+    this.#server.timeout = 600_000; // millis
+    // See: https://github.com/nodejs/node/issues/40071
+    // Leaving this without any limit will cause the server to reuse the
+    // connection indefinitely (in theory). As a result, load balancing will
+    // have very little effects if more instances of the server are brought up
+    // by the deployment orchestration tool.
+    // As for a good number, it depends on the application traffic
+    this.#server.maxRequestsPerSocket = 100;
+    this.#server.keepAliveTimeout = 10_000; // millis
+  }
+
+  #attachServerEventHandlers() {
+    // When a function is passed as a callback (even a method), the `this`
+    // context is lost (if it's not an arrow function). There are a couple
+    // of options to resolve said issue:
+    // 1. Make `this._healthCheck` an arrow function
+    // 2. Inline implementation as an anonymous arrow function
+    // 3. Bind `this` context to the called function
+    // We chose number 3 to be in line with the rest of the style of
+    // the application
+    this.#server
+      .once('error', this.#handleErrorEvent.bind(this))
+      .once('close', this.#handleCloseEvent.bind(this));
+  }
+
+  #handleErrorEvent(err: Error) {
+    this.#logger.fatal(err, 'HTTP Server error');
+
+    // If an event emitter error happened, we shutdown the application.
+    // As a result we allow the deployment orchestration tool to attempt to
+    // rerun the application in a "clean" state
+    process.exit(ERR_CODES.EXIT_RESTART);
+  }
+
+  async #handleCloseEvent() {
+    let exitCode = 0;
+    const results = await Promise.allSettled([
+      // Close all services here (database for example)
+      Promise.resolve(0)
+    ]);
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        this.#logger.fatal(result.reason, 'Error during server termination');
+        exitCode = ERR_CODES.EXIT_RESTART;
+      }
+    }
+    if (exitCode) {
+      return process.exit(exitCode);
+    }
+
+    process.exitCode = 0;
+  }
+
+  async #attachConfigurationMiddlewares(params: {
+    app: Express;
+    allowedMethods: Set<string>;
+    corsOptions: CorsOptions;
+  }) {
+    const { app, allowedMethods, corsOptions } = params;
+
+    app.use(
+      Middlewares.checkMethod(allowedMethods),
+      // Remove CORS if this only a backend application
+      cors(corsOptions),
       compress()
     );
-    if (isProductionMode(this._mode)) {
-      this._app.use(
+    if (isProductionMode(this.#mode)) {
+      app.use(
         (await import('helmet')).default({
           contentSecurityPolicy: true /* require-corp */,
           crossOriginEmbedderPolicy: { policy: 'require-corp' },
@@ -118,7 +247,7 @@ export default class HttpServer {
           originAgentCluster: true,
           referrerPolicy: { policy: 'no-referrer' },
           strictTransportSecurity: {
-            maxAge: 15_552_000, // seconds
+            maxAge: 15_552_000, // 180 days in seconds
             includeSubDomains: true
           },
           xContentTypeOptions: true,
@@ -133,72 +262,60 @@ export default class HttpServer {
     }
   }
 
-  public attachRoutesMiddlewares(params: {
+  #attachRoutesMiddlewares(params: {
+    app: Express;
     allowedHosts: Set<string>;
-    readyCheck: () => Promise<string> | string;
-    logMiddleware: (req: Request, res: Response, next: NextFunction) => void;
+    logMiddleware: (
+      req: Request,
+      res: ResponseWithoutCtx,
+      next: NextFunction
+    ) => void;
+    routes: { healthRoute: string; httpRoute: string };
   }) {
-    const { allowedHosts, readyCheck, logMiddleware } = params;
-    const { http: httpRoute, health: healthRoute } = this._routes;
+    const {
+      app,
+      allowedHosts,
+      logMiddleware,
+      routes: { healthRoute, httpRoute }
+    } = params;
 
-    if (isDevelopmentMode(this._mode)) {
-      this._attachAPIDocs(httpRoute);
+    if (isDevelopmentMode(this.#mode)) {
+      this.#attachAPIDocs(app, httpRoute);
     }
 
-    this._app
-      .get(healthRoute, Middlewares.healthCheck(allowedHosts, readyCheck))
+    app
+      .get(
+        healthRoute,
+        Middlewares.healthCheck(allowedHosts, this.#healthCheck.bind(this))
+      )
       // The middlewares are executed in order (as set by express) and there's
       // no point to log every health check or every call to the api-docs
       // (development only), so the log middleware comes after the health
       // check route
       .use(logMiddleware)
-      .use(
-        httpRoute,
-        Middlewares.attachContext(this._logger)
-        // Add relevant router(s) here
-      )
+      .use(httpRoute, Middlewares.attachContext(this.#requestContext))
+      // Add the routers here
+
       // Non-existent route & error handler
-      .use(Middlewares.handleMissedRoutes, Middlewares.errorHandler);
+      .use('*', Middlewares.handleMissedRoutes, Middlewares.errorHandler);
   }
 
-  /********************************************************************************/
-
-  private _attachConfigurations() {
-    // Every configuration referring to sockets here, talks about network/tcp
-    // socket NOT websockets. Network socket is the underlying layer for http
-    // request (in this case). In short, the socket options refer to a "standard"
-    // connection from a client
-    this._server.maxHeadersCount = 50;
-    this._server.headersTimeout = 1e3 * 20; // millis
-    this._server.requestTimeout = 1e3 * 20; // millis
-    // Connection close will terminate the tcp socket once the payload was
-    // transferred and acknowledged. This setting is for the rare cases where,
-    // for some reason, the tcp socket is left alive
-    this._server.timeout = 1e5 * 6; // millis
-    // See: https://github.com/nodejs/node/issues/40071
-    // Leaving this without any limit will cause the server to reuse the
-    // connection indefinitely (in theory). As a result, load balancing will
-    // have very little effects if more instances of the server are brought up
-    // by the deployment orchestration tool.
-    // As for a good number, it depends on the application traffic
-    this._server.maxRequestsPerSocket = 100;
-    this._server.keepAliveTimeout = 1e4; // millis
-  }
-
-  private _attachEventHandlers() {
-    this._server.on('error', (err) => {
-      this._logger.fatal(err, 'HTTP Server error');
-
-      // If an event emitter error happened, we shutdown the application.
-      // As a result we allow the deployment orchestration tool to attempt to
-      // rerun the application in a clean state
-      process.exit(1);
+  #attachAPIDocs(app: Express, apiRoute: string) {
+    app.use(`${apiRoute}/api-docs`, (_, res) => {
+      res.sendFile(HttpServer.#OPENAPI_FILE);
     });
   }
 
-  private _attachAPIDocs(apiRoute: string) {
-    this._app.use(`${apiRoute}/api-docs`, (_, res) => {
-      res.sendFile(HttpServer.OPENAPI_FILE);
-    });
+  async #healthCheck() {
+    // Add the health check here, for example:
+    // let notReadyMsg = '';
+    // try {
+    //   await this.#db.isReady();
+    // } catch (err) {
+    //   this.#logger.error(err, 'Database error');
+    //   notReadyMsg += '\nDatabase is unavailable';
+    // }
+
+    return await Promise.resolve('');
   }
 }

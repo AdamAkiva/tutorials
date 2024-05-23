@@ -1,4 +1,4 @@
-import type { UnknownObject } from './types/index.js';
+import type { DebugInstance, UnknownObject } from './types/index.js';
 
 /**********************************************************************************/
 
@@ -16,8 +16,7 @@ export function strcasecmp<T extends string>(s1: T, s2: T) {
 }
 
 export function objHasValues(obj: UnknownObject) {
-  let k: keyof typeof obj = null!;
-  for (k in obj) {
+  for (const k in obj) {
     if (obj[k] !== null && obj[k] !== undefined) {
       return true;
     }
@@ -30,9 +29,37 @@ export function filterNullAndUndefined<T>(value?: T | null): value is T {
   return value !== null && value !== undefined;
 }
 
-export function debugEnabled() {
-  return !!process.env.DEBUG;
+export function debugWrapper<T>(
+  fn: () => T,
+  debug: { instance: DebugInstance; msg: string }
+) {
+  const { instance: debugInstance, msg } = debug;
+
+  try {
+    debugInstance(`Begin --- ${msg}`);
+
+    return fn();
+  } finally {
+    debugInstance(`End   --- ${msg}`);
+  }
 }
+
+export async function asyncDebugWrapper<T>(
+  fn: () => Promise<T>,
+  debug: { instance: DebugInstance; msg: string }
+) {
+  const { instance: debugInstance, msg } = debug;
+
+  try {
+    debugInstance(`Begin --- ${msg}`);
+
+    return await fn();
+  } finally {
+    debugInstance(`End   --- ${msg}`);
+  }
+}
+
+/**********************************************************************************/
 
 export function isDevelopmentMode(mode?: string) {
   return mode === 'development';
