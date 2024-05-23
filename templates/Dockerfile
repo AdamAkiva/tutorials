@@ -1,7 +1,7 @@
-FROM node:20.11.1-alpine as dev-base
+FROM node:20.13.1-alpine as dev-base
 
 # Install dependencies
-RUN apk update && apk add --no-cache curl=8.5.0-r0 && apk add --no-cache tini=0.19.0-r2
+RUN apk update && apk add --no-cache curl && apk add --no-cache tini
 
 ################################ Development BE ####################################
 
