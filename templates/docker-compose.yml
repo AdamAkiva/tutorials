@@ -91,7 +91,7 @@ services:
       - SERVER_BASE_URL=http://localhost
       - HTTP_ROUTE=v0/api
       - HEALTH_CHECK_ROUTE=health
-      - ALLOWED_HOSTS=localhost
+      - ALLOWED_HOSTS=127.0.0.1,::,localhost
       # Depends on whose the client (browser) your application has. Either match
       # it to the frontend application you have, or remove it if it is only
       # accessed by server(s)
