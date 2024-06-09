@@ -1,11 +1,6 @@
-FROM node:20.13.1-alpine as dev-base
-
-# Install dependencies
-RUN apk update && apk add --no-cache curl && apk add --no-cache tini
-
 ################################ Development BE ####################################
 
-FROM dev-base as dev-be
+FROM adamakiva14/node:20.14.0 as dev-be
 
 # Set the workdir
 WORKDIR /home/node/node-template
@@ -21,7 +16,7 @@ CMD ["/home/node/entrypoint.sh"]
 
 ################################ Development FE ####################################
 
-FROM dev-base as dev-fe
+FROM adamakiva14/node:20.14.0 as dev-fe
 
 # Set the workdir
 WORKDIR /home/node/node-template
