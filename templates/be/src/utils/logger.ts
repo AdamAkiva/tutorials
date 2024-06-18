@@ -1,7 +1,7 @@
 import { pinoHttp } from 'pino-http';
 
 import { StatusCodes } from './constants.js';
-import { isProductionMode, isTestMode } from './functions.js';
+import { isProductionMode } from './functions.js';
 
 /**********************************************************************************/
 
@@ -18,20 +18,6 @@ export default class Logger {
           return { level: label.toUpperCase() };
         }
       },
-      transport: !isProductionMode(process.env.NODE_ENV)
-        ? {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              crlf: true,
-              levelFirst: true,
-              ignore: '',
-              // Used in test mode to print logs in a synchronous way.
-              // This forces the tests to not quit until all logs are printed
-              sync: isTestMode(process.env.NODE_ENV)
-            }
-          }
-        : undefined,
       customLogLevel: (_, res) => {
         if (res.statusCode === StatusCodes.REDIRECT) {
           return 'silent';
