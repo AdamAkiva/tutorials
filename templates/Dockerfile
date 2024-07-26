@@ -1,6 +1,10 @@
+FROM node:20.16.0-alpine AS base
+
+RUN apk add --no-cache curl tini
+
 ################################ Development BE ####################################
 
-FROM adamakiva14/node:20.14.0 as dev-be
+FROM base AS dev-be
 
 # Set the workdir
 WORKDIR /home/node/node-template
@@ -16,7 +20,7 @@ CMD ["/home/node/entrypoint.sh"]
 
 ################################ Development FE ####################################
 
-FROM adamakiva14/node:20.14.0 as dev-fe
+FROM base AS dev-fe
 
 # Set the workdir
 WORKDIR /home/node/node-template
