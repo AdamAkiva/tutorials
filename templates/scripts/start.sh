@@ -5,10 +5,10 @@ GID=$(id -g);
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")");
 ROOT_DIR=$(dirname "$SCRIPT_DIR");
-# Change the path according to your database(s) choice(s)
+# Pick the correct one according to your database choice(s)
 DB_DATA_FOLDER="$ROOT_DIR"/dev-data/pg;
-
-BE_DIR="$ROOT_DIR"/be;
+# DB_DATA_FOLDER="$ROOT_DIR"/dev-data/mongo;
+# DB_DATA_FOLDER="$ROOT_DIR"/dev-data/redis;
 
 NPM_BE_CACHE_FOLDER="$ROOT_DIR"/npm-cache/be;
 NPM_FE_CACHE_FOLDER="$ROOT_DIR"/npm-cache/fe;

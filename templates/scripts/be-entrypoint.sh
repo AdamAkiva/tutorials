@@ -6,4 +6,4 @@
 # expected
 
 npm install && npm run generate-openapi;
-exec env DEBUG=node-template:* node --watch --nolazy --enable-source-maps --trace-uncaught --trace-warnings --inspect=0.0.0.0:$SERVER_DEBUG_PORT --import @swc-node/register/esm-register ./src/main.ts;
+exec env DEBUG=node-template:* node --watch --nolazy --enable-source-maps --trace-uncaught --trace-warnings --inspect=0.0.0.0:"$SERVER_DEBUG_PORT" --import @swc-node/register/esm-register ./src/main.ts;

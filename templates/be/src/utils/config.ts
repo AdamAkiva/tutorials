@@ -1,3 +1,6 @@
+import { globalAgent } from 'node:http';
+import { Stream } from 'node:stream';
+
 import { ERR_CODES } from './constants.js';
 import {
   isDevelopmentMode,
@@ -8,7 +11,7 @@ import type { Mode } from './types/index.js';
 
 /**********************************************************************************/
 
-type EnvVars = {
+type EnvironmentVariables = {
   mode: Mode;
   server: {
     port: string;
@@ -21,8 +24,8 @@ type EnvVars = {
 
 /**********************************************************************************/
 
-export default class EnvironmentVariables {
-  readonly #environmentVariables: EnvVars;
+export default class EnvironmentManager {
+  readonly #environmentVariables;
 
   public constructor() {
     const mode = this.#checkRuntimeEnv(process.env.NODE_ENV);
@@ -40,7 +43,17 @@ export default class EnvironmentVariables {
         },
         allowedOrigins: new Set(process.env.ALLOWED_ORIGINS!.split(','))
       }
-    } as const;
+    } as const satisfies EnvironmentVariables;
+
+    // The default stack trace limit is 10 calls. Increasing it to a number which
+    // we'll never have to think about it again
+    Error.stackTraceLimit = 256;
+
+    // To prevent DOS attacks, See: https://nodejs.org/en/learn/getting-started/security-best-practices#denial-of-service-of-http-server-cwe-400
+    globalAgent.maxSockets = 32;
+    globalAgent.maxTotalSockets = 1024;
+
+    Stream.setDefaultHighWaterMark(false, 2_097_152);
   }
 
   public getEnvVariables() {

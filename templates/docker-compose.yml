@@ -9,6 +9,7 @@ services:
   #   # you use this template?)
   #   # See: https://hub.docker.com/_/mongo/tags
   #   image: mongo:latest
+  #   user: ${UID}:${GID}
   #   environment:
   #     - MONGO_INITDB_ROOT_USERNAME=admin
   #     - MONGO_INITDB_ROOT_PASSWORD=admin

@@ -5,5 +5,5 @@
 # using tini. This will allow signals to be forwarded to the application as
 # expected
 
-npm install;
+npm install --legacy-peer-deps;
 exec ./node_modules/.bin/vite;

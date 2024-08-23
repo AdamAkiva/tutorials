@@ -8,18 +8,9 @@
  * When the server runs
  */
 import { EventEmitter } from 'node:events';
-import { globalAgent } from 'node:http';
 
 // See: https://nodejs.org/api/events.html#capture-rejections-of-promises
 EventEmitter.captureRejections = true;
-
-// The default stack trace limit is 10 calls. Increasing it to a number which
-// we'll never have to think about it again
-Error.stackTraceLimit = 256;
-
-// To prevent DOS attacks, See: https://nodejs.org/en/learn/getting-started/security-best-practices#denial-of-service-of-http-server-cwe-400
-globalAgent.maxSockets = 32;
-globalAgent.maxTotalSockets = 1024;
 
 /**********************************************************************************/
 
@@ -114,6 +105,8 @@ function attachProcessEventHandlers(
 function signalHandler(server: HttpServer) {
   return () => {
     server.close();
+
+    process.exit(ERR_CODES.EXIT_NO_RESTART);
   };
 }
 
@@ -125,7 +118,7 @@ function globalErrorHandler(params: {
   const { server, reason, logger } = params;
 
   return (err: unknown) => {
-    logger.fatal(err, `Unhandled ${reason}`);
+    logger.fatal(err, 'Unhandled:', reason);
 
     server.close();
 

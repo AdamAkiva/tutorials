@@ -7,11 +7,8 @@ SCRIPT_DIR=$(dirname "$(realpath "$0")");
 ROOT_DIR=$(dirname "$SCRIPT_DIR");
 DB_DATA_FOLDER="$ROOT_DIR"/dev-data;
 
-BE_DIR="$ROOT_DIR"/be;
-BE_MODULES_FOLDER="$BE_DIR"/node_modules;
-
-FE_DIR="$ROOT_DIR"/fe;
-FE_MODULES_FOLDER="$FE_DIR"/node_modules;
+BE_MODULES_FOLDER="$ROOT_DIR"/be/node_modules;
+FE_MODULES_FOLDER="$ROOT_DIR"/fe/node_modules;
 
 UV_THREADPOOL_SIZE=$(($(nproc --all) - 1));
 
